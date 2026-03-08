@@ -40,10 +40,13 @@ def register():
     if request.method == "POST":
         hashed_password = bcrypt.generate_password_hash(request.form.get("password")).decode('utf-8')
 
+        is_admin = request.form.get("is_admin") == "on"
+        role = "admin" if is_admin else "user"
+
         user = Users(
             username=request.form.get("username"),
             password=hashed_password,
-            role="user"
+            role=role
         )
         db.session.add(user)
         db.session.commit()
@@ -88,3 +91,33 @@ def admin_required(f):
             return redirect(url_for("home"))
         return f(*args, **kwargs)
     return decorated_function
+
+# More flexible version for multiple roles:
+def role_required(*roles):
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not current_user.is_authenticated or current_user.role not in roles:
+                return redirect(url_for("home"))
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+# Usage examples:
+@app.route('/admin-dashboard')
+@login_required
+@admin_required
+def admin_dashboard():
+    users = Users.query.all()
+    return render_template("admin_dashboard.html", users=users)
+
+# 6. (Optional) Creating an Admin User
+# with app.app_context():
+#     admin = Users(
+#         username="admin",
+#         password=bcrypt.generate_password_hash("admin123").decode('utf-8'),
+#         role="admin"
+#     )
+#     db.session.add(admin)
+#     db.session.commit()
+#     print("Admin user created!")
