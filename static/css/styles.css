@@ -1,0 +1,161 @@
+:root {
+    --bg-primary: #111111;
+    --bg-secondary: #1a1a1a;
+    --bg-card: #1a1a1a;
+
+    --border-color: #2a2a2a;
+
+    --text-primary: #ffffff;
+    --text-secondary: #cccccc;
+    --text-muted: #aaaaaa;
+
+    --green: #2e7d52;
+    --green-hover: #256642;
+    --green-focus: #3a8a5c;
+
+    --border-radius: 6px;
+    --border-radius-lg: 8px;
+
+    --input-height: 60px;
+    --btn-height: 65px;
+}
+
+/* Base */
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+}
+
+/* Logo */
+.logo-area {
+    position: fixed;
+    top: 24px;
+    left: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+}
+
+.logo-area span {
+    font-size: 1.6rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+/* Nav links (top right) */
+.nav-links {
+    position: fixed;
+    top: 28px;
+    right: 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.nav-links a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 1rem;
+}
+
+.nav-links a:hover {
+    color: var(--text-primary);
+}
+
+/* Centered page layout */
+.page-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+/* Card / box */
+.card-box {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    padding: 36px 48px;
+    width: 100%;
+    max-width: 500px;
+}
+
+/* Form */
+.form-label {
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    margin-bottom: 6px;
+}
+
+.form-control {
+    background-color: var(--text-primary);
+    border: none;
+    border-radius: var(--border-radius);
+    height: var(--input-height);
+    font-size: 1rem;
+}
+
+.form-control:focus {
+    background-color: var(--text-primary);
+    box-shadow: none;
+    border: 2px solid var(--green-focus);
+}
+
+/* Buttons */
+.btn-green {
+    background-color: var(--green);
+    color: var(--text-primary);
+    border: none;
+    border-radius: var(--border-radius);
+    height: var(--btn-height);
+    font-size: 1.5rem;
+    width: 100%;
+}
+
+.btn-green:hover {
+    background-color: var(--green-hover);
+    color: var(--text-primary);
+}
+
+.btn-green-sm {
+    background-color: var(--green);
+    color: var(--text-primary) !important;
+    border-radius: var(--border-radius);
+    padding: 6px 20px;
+    text-decoration: none;
+    font-size: 1rem;
+}
+
+.btn-green-sm:hover {
+    background-color: var(--green-hover);
+    color: var(--text-primary);
+}
+
+/* Bottom links (e.g. below login form) */
+.bottom-links {
+    text-align: center;
+    margin-top: 16px;
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+.bottom-links a {
+    color: var(--text-secondary);
+    text-decoration: none;
+}
+
+.bottom-links a:hover {
+    text-decoration: underline;
+}
+
+/* Text helpers */
+.text-muted-light {
+    color: var(--text-muted);
+}
+
+.text-secondary-light {
+    color: var(--text-secondary);
+}
