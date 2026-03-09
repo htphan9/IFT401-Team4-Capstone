@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+    <title>{% block title %}Moonshot{% endblock %}</title>
+</head>
+
+<body>
+
+    {% if current_user.is_authenticated %}
+    <div class="top-nav">
+        <a class="logo-area" href="/">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 20L20 4M20 4H8M20 4V16" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Moonshot</span>
+        </a>
+
+        <div class="nav-pill-group">
+            <a href="/" class="nav-pill {% if active_page == 'portfolio' %}active{% endif %}">Portfolio</a>
+            <a href="/market" class="nav-pill {% if active_page == 'market' %}active{% endif %}">Market</a>
+            <a href="/cash" class="nav-pill {% if active_page == 'cash' %}active{% endif %}">Cash</a>
+            <a href="/history" class="nav-pill {% if active_page == 'history' %}active{% endif %}">History</a>
+            {% if current_user.role == "admin" %}
+            <a href="/admin-dashboard" class="nav-pill {% if active_page == 'admin' %}active{% endif %}">Admin</a>
+            {% endif %}
+        </div>
+
+        <div class="avatar-wrapper">
+            <div class="user-avatar" onclick="toggleDropdown()"></div>
+            <div class="avatar-dropdown" id="avatarDropdown">
+                <a href="/logout">Logout</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="page-content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="{{ url_for('static', filename='js/general.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+
+</body>
+
+</html>

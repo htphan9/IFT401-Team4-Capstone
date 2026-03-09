@@ -1,3 +1,9 @@
+.logo-area {
+    position: fixed;
+    top: 24px;
+    left: 24px;
+}
+
 .form-wrapper {
     width: 100%;
     max-width: 500px;
