@@ -109,12 +109,12 @@ def role_required(*roles):
     return decorator
 
 # Usage examples:
-@app.route('/admin-dashboard')
+@app.route('/admin')
 @login_required
 @admin_required
 def admin_dashboard():
     users = Users.query.all()
-    return render_template("admin_dashboard.html", users=users)
+    return render_template("admin.html", users=users)
 
 # 6. (Optional) Creating an Admin User
 # with app.app_context():
