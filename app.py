@@ -83,6 +83,11 @@ def logout():
 def home():
     return render_template("home.html")
 
+@app.route('/market')
+@login_required # Only logged-in users can access
+def market():
+    return render_template("market.html")
+
 # Custom Decorators for Role Checking
 def admin_required(f):
     @wraps(f)
