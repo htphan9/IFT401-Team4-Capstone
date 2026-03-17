@@ -10,6 +10,68 @@
     padding: 20px;
 }
 
+.form-label {
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    margin-bottom: 6px;
+}
+
+.form-control {
+    background-color: var(--text-primary);
+    border: none;
+    border-radius: var(--border-radius);
+    height: var(--input-height);
+    font-size: 1rem;
+}
+
+.form-control:focus {
+    background-color: var(--text-primary);
+    box-shadow: none;
+    border: 2px solid var(--green-focus);
+}
+
 .btn-green {
+    background-color: var(--green);
+    color: var(--text-primary);
+    border: none;
+    border-radius: var(--border-radius);
+    height: var(--btn-height);
+    font-size: 1.5rem;
+    width: 100%;
     margin-top: 20px;
+}
+
+.btn-green:hover {
+    background-color: var(--green-hover);
+    color: var(--text-primary);
+}
+
+.btn-green-sm {
+    background-color: var(--green);
+    color: var(--text-primary) !important;
+    border-radius: var(--border-radius);
+    padding: 6px 20px;
+    text-decoration: none;
+    font-size: 1rem;
+}
+
+.btn-green-sm:hover {
+    background-color: var(--green-hover);
+    color: var(--text-primary);
+}
+
+.bottom-links {
+    text-align: center;
+    margin-top: 16px;
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+.bottom-links a {
+    color: var(--text-secondary);
+    text-decoration: none;
+}
+
+.bottom-links a:hover {
+    text-decoration: underline;
 }
