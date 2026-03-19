@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block extra_css %}
+    <!-- <link href="{{ url_for('static', filename='css/admin.css') }}" rel="stylesheet"> -->
+{% endblock %}
+
+{% block title %}Admin - Moonshot{% endblock %}
+
+{% set active_page = "admin" %}
+
+{% block content %}
+        {% if current_user.is_authenticated %}
+        <h1>Welcome to the Admin Panel, {{ current_user.username }}</h1>
+        {% if current_user.role == "admin" %}
+        <h2>Admin</h2>
+        <p>This dashboard is visible only to admins.</p>
+        {% endif %}
+        {% else %}
+        <h1>You are not logged in</h1>
+        {% endif %}
+{% endblock %}

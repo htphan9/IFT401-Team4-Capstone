@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block extra_css %}
+    <!-- <link href="{{ url_for('static', filename='css/cash.css') }}" rel="stylesheet"> -->
+{% endblock %}
+
+{% block title %}Cash - Moonshot{% endblock %}
+
+{% set active_page = "cash" %}
+
+{% block content %}
+        {% if current_user.is_authenticated %}
+        <h1>Welcome to the Bank, {{ current_user.username }}</h1>
+        {% if current_user.role == "admin" %}
+        <h2>Admin Cash</h2>
+        <p>Cash functions go here.</p>
+        {% elif current_user.role == "user" %}
+        <h2>User Cash</h2>
+        <p>Cash functions go here.</p>
+        {% endif %}
+        {% else %}
+        <h1>You are not logged in</h1>
+        {% endif %}
+{% endblock %}

@@ -17,6 +17,7 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
+login_manager.login_view = 'login'
 
 # User model with role-based access control
 class Users(UserMixin, db.Model):
@@ -77,17 +78,6 @@ def logout():
     logout_user()
     return redirect(url_for("login"))
 
-# Protected Home Route
-@app.route('/')
-@login_required # Only logged-in users can access
-def home():
-    return render_template("home.html")
-
-@app.route('/market')
-@login_required # Only logged-in users can access
-def market():
-    return render_template("market.html")
-
 # Custom Decorators for Role Checking
 def admin_required(f):
     @wraps(f)
@@ -108,13 +98,44 @@ def role_required(*roles):
         return decorated_function
     return decorator
 
-# Usage examples:
+# Protected Home Route
+@app.route('/')
+@login_required # Only logged-in users can access
+def home():
+    return render_template("home.html")
+
+# Market
+@app.route('/market')
+@login_required # Only logged-in users can access
+def market():
+    return render_template("market.html")
+
+# Cash
+@app.route('/cash')
+@login_required # Only logged-in users can access
+def cash():
+    return render_template("cash.html")
+
+# History
+@app.route('/history')
+@login_required # Only logged-in users can access
+def history():
+    return render_template("history.html")
+
+# Admin
 @app.route('/admin')
-@login_required
-@admin_required
-def admin_dashboard():
-    users = Users.query.all()
-    return render_template("admin.html", users=users)
+@login_required # Only logged-in users can access
+@admin_required # Only Admins can access
+def admin():
+    return render_template("admin.html")
+
+# Usage examples:
+# @app.route('/admin')
+# @login_required
+# @admin_required
+# def admin_dashboard():
+#     users = Users.query.all()
+#     return render_template("admin.html", users=users)
 
 # 6. (Optional) Creating an Admin User
 # with app.app_context():
