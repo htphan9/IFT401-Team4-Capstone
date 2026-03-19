@@ -19,17 +19,29 @@
     <div class="page-center">
         <div class="form-wrapper">
             <form action="#" method="post">
+                {% if error %}
+                <div class="alert alert-danger py-2" role="alert">{{ error }}</div>
+                {% endif %}
+                <div class="mb-3">
+                    <label for="full_name" class="form-label">Full Name:</label>
+                    <input type="text" class="form-control" id="full_name" name="full_name" required>
+                </div>
                 <div class="mb-3">
                     <label for="username" class="form-label">Username:</label>
                     <input type="text" class="form-control" id="username" name="username" required>
                 </div>
                 <div class="mb-3">
+                    <label for="email" class="form-label">Email:</label>
+                    <input type="email" class="form-control" id="email" name="email" required>
+                </div>
+                <div class="mb-3">
                     <label for="password" class="form-label">Password:</label>
                     <input type="password" class="form-control" id="password" name="password" required>
                 </div>
-                <div class="mb-4 d-flex align-items-center gap-2">
-                    <input type="checkbox" class="form-check-input m-0" id="is_admin" name="is_admin">
-                    <label for="is_admin" class="form-label m-0">Admin account</label>
+                <div class="mb-4">
+                    <label for="confirm_password" class="form-label">Confirm Password:</label>
+                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                    <div class="invalid-feedback">Passwords do not match.</div>
                 </div>
                 <button type="submit" class="btn btn-green">Create account</button>
             </form>
@@ -41,5 +53,5 @@
 {% endblock %}
 
 {% block extra_js %}
-    
+    <script src="{{ url_for('static', filename='js/sign_up.js') }}"></script>
 {% endblock %}

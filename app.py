@@ -22,8 +22,10 @@ login_manager.login_view = 'login'
 # User model with role-based access control
 class Users(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(250), unique=True, nullable=False)
-    password = db.Column(db.String(250), nullable=False)
+    full_name = db.Column(db.String(255), nullable=False)
+    username = db.Column(db.String(39), unique=True, nullable=False)
+    password = db.Column(db.String(255), nullable=False)
+    email = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(50), default="user", nullable=False)
 
 # Initialize database
@@ -39,15 +41,20 @@ def load_user(user_id):
 @app.route('/register', methods=["GET", "POST"])
 def register():
     if request.method == "POST":
+        password = request.form.get("password")
+        confirm_password = request.form.get("confirm_password")
+ 
+        if password != confirm_password:
+            return render_template("sign_up.html", error="Passwords do not match.")
+
         hashed_password = bcrypt.generate_password_hash(request.form.get("password")).decode('utf-8')
 
-        is_admin = request.form.get("is_admin") == "on"
-        role = "admin" if is_admin else "user"
-
         user = Users(
+            full_name=request.form.get("full_name"),
             username=request.form.get("username"),
             password=hashed_password,
-            role=role
+            email=request.form.get("email"),
+            role="user"
         )
         db.session.add(user)
         db.session.commit()
