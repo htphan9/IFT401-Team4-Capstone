@@ -50,6 +50,11 @@
     color: var(--text-primary);
 }
 
+.btn-green:focus {
+    background-color: var(--green-hover);
+    color: var(--text-primary);
+}
+
 .btn-green-sm {
     background-color: var(--green);
     color: var(--text-primary) !important;
@@ -60,6 +65,11 @@
 }
 
 .btn-green-sm:hover {
+    background-color: var(--green-hover);
+    color: var(--text-primary);
+}
+
+.btn-green-sm:focus {
     background-color: var(--green-hover);
     color: var(--text-primary);
 }
