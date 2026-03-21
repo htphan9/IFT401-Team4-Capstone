@@ -194,7 +194,16 @@ def cash():
 @app.route('/history')
 @login_required # Only logged-in users can access
 def history():
-    return render_template("history.html")
+    # Admins see everyone's data; regular users only see their own.
+    # filter_by(user_id=...) scopes the query to the logged-in user.
+    if current_user.role == "admin":
+        transactions = Transaction.query.all()
+        audit_logs = AuditLog.query.all()
+    else:
+        transactions = Transaction.query.filter_by(user_id=current_user.id).all()
+        audit_logs = AuditLog.query.filter_by(user_id=current_user.id).all()
+ 
+    return render_template("history.html", transactions=transactions, audit_logs=audit_logs)
 
 # Admin
 @app.route('/admin')
