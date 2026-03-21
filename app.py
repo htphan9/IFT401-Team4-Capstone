@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import os
+from decimal import Decimal
 
 app = Flask(__name__)
 bcrypt = Bcrypt(app)
@@ -188,8 +189,59 @@ def market():
 @app.route('/cash')
 @login_required # Only logged-in users can access
 def cash():
-    return render_template("cash.html")
+    account = CashAccount.query.filter_by(user_id=current_user.id).first()
+    transactions = Transaction.query.filter_by(user_id=current_user.id).all()
+ 
+    return render_template("cash.html", account=account, transactions=transactions)
 
+@app.route('/cash/deposit', methods=["POST"])
+@login_required
+def deposit():
+    amount = Decimal(request.form.get("amount"))
+ 
+    account = CashAccount.query.filter_by(user_id=current_user.id).first()
+    if not account:
+        # No account yet — create one with this deposit as the starting balance
+        account = CashAccount(user_id=current_user.id, balance=amount)
+        db.session.add(account)
+    else:
+        account.balance += amount
+ 
+    # Log the deposit to the audit log
+    log = AuditLog(
+        user_id=current_user.id,
+        activity_type="deposit",
+        description=f"Deposited ${amount:.2f}"
+    )
+    db.session.add(log)
+    db.session.commit()
+ 
+    return redirect(url_for("cash"))
+ 
+ 
+@app.route('/cash/withdraw', methods=["POST"])
+@login_required
+def withdraw():
+    amount = Decimal(request.form.get("amount"))
+ 
+    account = CashAccount.query.filter_by(user_id=current_user.id).first()
+ 
+    # Block the withdrawal if the user doesn't have enough funds
+    if not account or account.balance < amount:
+        return render_template("cash.html", account=account, message="Insufficient funds.", message_type="danger")
+ 
+    account.balance -= amount
+ 
+    # Log the withdrawal to the audit log
+    log = AuditLog(
+        user_id=current_user.id,
+        activity_type="withdrawal",
+        description=f"Withdrew ${amount:.2f}"
+    )
+    db.session.add(log)
+    db.session.commit()
+ 
+    return redirect(url_for("cash"))
 # History
 @app.route('/history')
 @login_required # Only logged-in users can access

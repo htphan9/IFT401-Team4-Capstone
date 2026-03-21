@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block extra_css %}
-    <!-- <link href="{{ url_for('static', filename='css/cash.css') }}" rel="stylesheet"> -->
+    <link href="{{ url_for('static', filename='css/cash.css') }}" rel="stylesheet">
 {% endblock %}
 
 {% block title %}Cash - Moonshot{% endblock %}
@@ -8,20 +8,59 @@
 {% set active_page = "cash" %}
 
 {% block content %}
-        {% if current_user.is_authenticated %}
-        <h1>Welcome to the Bank, {{ current_user.username }}</h1>
-        {% if current_user.role == "admin" %}
-        <h2>Admin Cash</h2>
-        <p>Cash functions go here.</p>
-        {% elif current_user.role == "user" %}
-        <h2>User Cash</h2>
-        <p>Cash functions go here.</p>
-        {% endif %}
-        {% else %}
-        <h1>You are not logged in</h1>
-        {% endif %}
+{% if current_user.is_authenticated %}
+
+<h1>Cash</h1>
+
+<!-- Balance card — `account` comes from app.py -->
+<div class="card bg-dark border-secondary mb-4" style="max-width: 300px;">
+    <div class="card-body">
+        <h6 class="card-subtitle mb-1 text-muted">Available Balance</h6>
+        <h2 class="card-title mb-0">
+            ${{ "%.2f"|format(account.balance) if account else "0.00" }}
+        </h2>
+    </div>
+</div>
+
+<!-- Show a message if one was passed back from the route -->
+{% if message %}
+    <p class="text-{{ message_type }}">{{ message }}</p>
+{% endif %}
+
+<!-- Deposit and withdraw forms side by side -->
+<div class="d-flex gap-4">
+
+    <div class="card bg-dark border-secondary" style="width: 280px;">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Deposit</h5>
+            <form action="/cash/deposit" method="POST">
+                <div class="mb-3">
+                    <label class="form-label text-muted">Amount ($)</label>
+                    <input type="number" class="form-control" name="amount" min="0.01" step="0.01" required>
+                </div>
+                <button type="submit" class="btn btn-success w-100">Deposit</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card bg-dark border-secondary" style="width: 280px;">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Withdraw</h5>
+            <form action="/cash/withdraw" method="POST">
+                <div class="mb-3">
+                    <label class="form-label text-muted">Amount ($)</label>
+                    <input type="number" class="form-control" name="amount" min="0.01" step="0.01" required>
+                </div>
+                <button type="submit" class="btn btn-danger w-100">Withdraw</button>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+{% else %}
+<p>You are not logged in.</p>
+{% endif %}
 {% endblock %}
 
-{% block extra_js %}
-    
-{% endblock %}
+{% block extra_js %}{% endblock %}

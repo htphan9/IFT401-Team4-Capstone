@@ -1,0 +1,18 @@
+.card.bg-dark {
+    background-color: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+}
+ 
+/* Style the number inputs to match the dark theme */
+.form-control {
+    background-color: #1f1f1f;
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+ 
+.form-control:focus {
+    background-color: #1f1f1f;
+    border-color: #444;
+    color: var(--text-primary);
+    box-shadow: none;
+}
