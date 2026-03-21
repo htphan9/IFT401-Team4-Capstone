@@ -181,7 +181,8 @@ def home():
 @app.route('/market')
 @login_required # Only logged-in users can access
 def market():
-    return render_template("market.html")
+    stocks = Stock.query.all()
+    return render_template("market.html", stocks=stocks)
 
 # Cash
 @app.route('/cash')

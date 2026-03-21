@@ -8,80 +8,52 @@
 {% set active_page = "market" %}
 
 {% block content %}
-        {% if current_user.is_authenticated %}
-        <h1>Welcome to the market, {{ current_user.username }}</h1>
-        {% if current_user.role == "admin" %}
-        <h2>Admin Market</h2>
-        <!-- https://getbootstrap.com/docs/4.0/content/tables/ -->
-        <table class="table table-striped table-dark">
-            <thead class="thead-dark">
-                <tr>
-                <th scope="col">#</th>
-                <th scope="col">First</th>
-                <th scope="col">Last</th>
-                <th scope="col">Handle</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                <th scope="row">1</th>
-                <td>Mark</td>
-                <td>Otto</td>
-                <td>@mdo</td>
-                </tr>
-                <tr>
-                <th scope="row">2</th>
-                <td>Jacob</td>
-                <td>Thornton</td>
-                <td>@fat</td>
-                </tr>
-                <tr>
-                <th scope="row">3</th>
-                <td>Larry</td>
-                <td>the Bird</td>
-                <td>@twitter</td>
-                </tr>
-            </tbody>
-            </table>
-        {% elif current_user.role == "user" %}
-        <h2>User Market</h2>
-        <!-- https://getbootstrap.com/docs/4.0/content/tables/ -->
-        <table class="table table-striped table-dark">
-            <thead class="thead-dark">
-                <tr>
-                <th scope="col">#</th>
-                <th scope="col">First</th>
-                <th scope="col">Last</th>
-                <th scope="col">Handle</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                <th scope="row">1</th>
-                <td>Mark</td>
-                <td>Otto</td>
-                <td>@mdo</td>
-                </tr>
-                <tr>
-                <th scope="row">2</th>
-                <td>Jacob</td>
-                <td>Thornton</td>
-                <td>@fat</td>
-                </tr>
-                <tr>
-                <th scope="row">3</th>
-                <td>Larry</td>
-                <td>the Bird</td>
-                <td>@twitter</td>
-                </tr>
-            </tbody>
-            </table>
-        {% endif %}
+{% if current_user.is_authenticated %}
+
+<h1>Market</h1>
+
+<!-- Stock table — `stocks` is passed in from the /market route in app.py -->
+<table class="table table-striped table-dark">
+    <thead>
+        <tr>
+            <th>Ticker</th>
+            <th>Company</th>
+            <th>Current Price</th>
+            <th>Opening Price</th>
+            <th>Day High</th>
+            <th>Day Low</th>
+            <th>Available Shares</th>
+            <th>Total Issued</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% if stocks %}
+            {% for stock in stocks %}
+            <tr>
+                <td>{{ stock.ticker }}</td>
+                <td>{{ stock.company_name }}</td>
+                <td>${{ "%.2f"|format(stock.current_price) }}</td>
+                <td>${{ "%.2f"|format(stock.opening_price) }}</td>
+                <td>{{ "$%.2f"|format(stock.daily_high) if stock.daily_high else "—" }}</td>
+                <td>{{ "$%.2f"|format(stock.daily_low) if stock.daily_low else "—" }}</td>
+                <td>{{ "{:,}".format(stock.available_inventory) }}</td>
+                <td>{{ "{:,}".format(stock.total_shares_issued) }}</td>
+            </tr>
+            {% endfor %}
         {% else %}
-        <h1>You are not logged in</h1>
+            <!-- Shown when the stocks table is empty -->
+            <tr>
+                <td colspan="8" class="text-center text-muted py-4">
+                    No stocks in the database yet.
+                </td>
+            </tr>
         {% endif %}
+    </tbody>
+</table>
+
+{% else %}
+<p>You are not logged in.</p>
+{% endif %}
 {% endblock %}
 
-{% block extra_js %}
-    
-{% endblock %}
+{% block extra_js %}{% endblock %}
