@@ -4,6 +4,8 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 from flask_bcrypt import Bcrypt
 from functools import wraps
 from dotenv import load_dotenv
+from datetime import datetime
+from zoneinfo import ZoneInfo
 import os
 
 app = Flask(__name__)
@@ -19,6 +21,11 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+# https://www.learnbyexample.org/working-with-timezones-in-python/
+# Convert UTC to America/Phoenix
+def az_time():
+    return datetime.now(ZoneInfo("America/Phoenix"))
+
 # User model with role-based access control
 class Users(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -27,6 +34,65 @@ class Users(UserMixin, db.Model):
     password = db.Column(db.String(255), nullable=False)
     email = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(50), default="user", nullable=False)
+
+# Cash model
+class CashAccount(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    balance = db.Column(db.Numeric(12, 2), nullable=False, default=0.00)
+
+class Stock(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    company_name = db.Column(db.String(255), nullable=False)
+    ticker = db.Column(db.String(10), nullable=False)
+    total_shares_issued = db.Column(db.Integer, nullable=False)
+    available_inventory = db.Column(db.Integer, nullable=False)
+    current_price = db.Column(db.Numeric(10, 2), nullable=False)
+    opening_price = db.Column(db.Numeric(10, 2), nullable=False)
+    daily_high = db.Column(db.Numeric(10, 2))
+    daily_low = db.Column(db.Numeric(10, 2))
+    initial_price = db.Column(db.Numeric(10, 2), nullable=False)
+
+# Audit model
+class AuditLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    activity_type = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(255))
+    timestamp = db.Column(db.DateTime, nullable=False, default=az_time)
+
+# Market model
+class MarketConfiguration(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    market_hours = db.Column(db.String(100), nullable=False)
+    market_schedule = db.Column(db.String(100), nullable=False)
+
+# Transactions model
+class Transaction(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    stock_id = db.Column(db.Integer, db.ForeignKey('stock.id'), nullable=False)
+    type = db.Column(db.String(20), nullable=False) # buy/sell
+    amount = db.Column(db.Integer, nullable=False)
+    price_at_execution = db.Column(db.Numeric(10, 2))
+    status = db.Column(db.String(50), nullable=False)
+    log_id = db.Column(db.Integer, db.ForeignKey('audit_log.id'))
+    market_id = db.Column(db.Integer, db.ForeignKey('market_configuration.id'))
+ 
+# Holiday model
+class Holiday(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    market_id = db.Column(db.Integer, db.ForeignKey('market_configuration.id'), nullable=False)
+    holiday_date = db.Column(db.Date, nullable=False)
+    description = db.Column(db.String(255))
+
+# Portfolio model
+class Portfolio(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    stock_id = db.Column(db.Integer, db.ForeignKey('stock.id'), nullable=False)
+    cash_account_id = db.Column(db.Integer, db.ForeignKey('cash_account.id'), nullable=False)
+    shares_owned = db.Column(db.Integer, nullable=False, default=0)
 
 # Initialize database
 with app.app_context():
