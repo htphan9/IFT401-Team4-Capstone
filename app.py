@@ -58,6 +58,7 @@ class Stock(db.Model):
 class AuditLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user = db.relationship('Users', backref='audit_logs')
     activity_type = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(255))
     timestamp = db.Column(db.DateTime, nullable=False, default=az_time)
@@ -72,7 +73,9 @@ class MarketConfiguration(db.Model):
 class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user = db.relationship('Users', backref='transactions')
     stock_id = db.Column(db.Integer, db.ForeignKey('stock.id'), nullable=False)
+    stock = db.relationship('Stock', backref='transactions')
     type = db.Column(db.String(20), nullable=False) # buy/sell
     amount = db.Column(db.Integer, nullable=False)
     price_at_execution = db.Column(db.Numeric(10, 2))
@@ -176,7 +179,9 @@ def role_required(*roles):
 @app.route('/')
 @login_required # Only logged-in users can access
 def home():
-    return render_template("home.html")
+    account = CashAccount.query.filter_by(user_id=current_user.id).first()
+
+    return render_template("home.html", account=account)
 
 # Market
 @app.route('/market')
@@ -242,6 +247,7 @@ def withdraw():
     db.session.commit()
  
     return redirect(url_for("cash"))
+
 # History
 @app.route('/history')
 @login_required # Only logged-in users can access
