@@ -9,9 +9,9 @@
  
 {% block content %}
 {% if current_user.is_authenticated %}
- 
-<h1>History</h1>
- 
+<div class="d-flex flex-column align-items-center">
+    <h1>History</h1>
+</div>
 <!-- ── Transactions ──────────────────────────────────────────────────────────
      `transactions` is passed in from the /history route in app.py.
      Each row is a Transaction object joined with its Stock name.
@@ -42,7 +42,7 @@
             {% endfor %}
         {% else %}
             <tr>
-                <td colspan="6" class="text-center text-muted py-4">No transactions yet.</td>
+                <td colspan="6" class="text-center py-4">No transactions yet.</td>
             </tr>
         {% endif %}
     </tbody>
@@ -61,7 +61,7 @@
             {% endif %}
             <th>Activity</th>
             <th>Description</th>
-            <th>Timestamp</th>
+            <th>Timestamp (MST)</th>
         </tr>
     </thead>
     <tbody>

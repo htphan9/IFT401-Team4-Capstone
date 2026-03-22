@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block extra_css %}
-    <!-- <link href="{{ url_for('static', filename='css/home.css') }}" rel="stylesheet"> -->
+    <link href="{{ url_for('static', filename='css/home.css') }}" rel="stylesheet">
 {% endblock %}
 
 {% block title %}Portfolio - Moonshot{% endblock %}
@@ -9,14 +9,34 @@
 
 {% block content %}
         {% if current_user.is_authenticated %}
-        <h1>Welcome back to the Surface, {{ current_user.username }}</h1>
-        {% if current_user.role == "admin" %}
-        <h2>Admin Portfolio</h2>
-        <p>This is visible only to admins.</p>
-        {% elif current_user.role == "user" %}
-        <h2>User Portfolio</h2>
-        <p>This is visible only to regular users.</p>
-        {% endif %}
+        <div class="d-flex flex-column align-items-center">
+            <h1>Welcome back to the Surface, {{ current_user.username }}</h1>
+        </div>
+
+        <!-- Available Balance from cash.html -->
+         <div class="d-flex justify-content-between align-items-center">
+
+            <div>
+                {% if current_user.role == "admin" %}
+                <h2>Admin Portfolio</h2>
+                <p>This is visible only to admins.</p>
+                {% elif current_user.role == "user" %}
+                <h2>User Portfolio</h2>
+                <p>This is visible only to regular users.</p>
+                {% endif %}
+            </div>
+
+            <div class="card bg-dark border-secondary mb-4" style="max-width: 30vw; margin-right: 5vw">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-1">Available Balance</h6>
+                    <h2 class="card-title mb-0">
+                        ${{ "%.2f"|format(account.balance) if account else "0.00" }}
+                    </h2>
+                </div>
+            </div>
+
+        </div>
+
         {% else %}
         <h1>You are not logged in</h1>
         {% endif %}

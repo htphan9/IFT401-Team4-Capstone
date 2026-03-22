@@ -1,4 +1,5 @@
 .card.bg-dark {
+    color: var(--text-primary);
     background-color: var(--bg-card) !important;
     border-color: var(--border-color) !important;
 }

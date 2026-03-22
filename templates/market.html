@@ -10,7 +10,9 @@
 {% block content %}
 {% if current_user.is_authenticated %}
 
-<h1>Market</h1>
+<div class="d-flex flex-column align-items-center">
+    <h1>Market</h1>
+</div>
 
 <!-- Stock table — `stocks` is passed in from the /market route in app.py -->
 <table class="table table-striped table-dark">
@@ -43,7 +45,7 @@
         {% else %}
             <!-- Shown when the stocks table is empty -->
             <tr>
-                <td colspan="8" class="text-center text-muted py-4">
+                <td colspan="8" class="text-center py-4">
                     No stocks in the database yet.
                 </td>
             </tr>
