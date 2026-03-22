@@ -32,9 +32,12 @@ class Users(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     full_name = db.Column(db.String(255), nullable=False)
     username = db.Column(db.String(39), unique=True, nullable=False)
+    user = db.relationship('Users', backref='portfolios')
     password = db.Column(db.String(255), nullable=False)
     email = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(50), default="user", nullable=False)
+    stock = db.relationship('Stock', backref='portfolios')
+    cash_account = db.relationship('CashAccount', backref='portfolios')
 
 # Cash model
 class CashAccount(db.Model):
@@ -81,7 +84,9 @@ class Transaction(db.Model):
     price_at_execution = db.Column(db.Numeric(10, 2))
     status = db.Column(db.String(50), nullable=False)
     log_id = db.Column(db.Integer, db.ForeignKey('audit_log.id'))
+    log = db.relationship('AuditLog', backref='transactions')
     market_id = db.Column(db.Integer, db.ForeignKey('market_configuration.id'))
+    market = db.relationship('MarketConfiguration', backref='transactions')
  
 # Holiday model
 class Holiday(db.Model):
