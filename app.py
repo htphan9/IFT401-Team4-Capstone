@@ -17,7 +17,7 @@ load_dotenv()
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
-# # Configuration for Demo
+# # Configuration for Demo Only
 # app.config['SQLALCHEMY_DATABASE_URI'] = \
 #     'mysql+pymysql://root:password@localhost/capstone_db'
 # app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -118,6 +118,18 @@ with app.app_context():
 @login_manager.user_loader
 def load_user(user_id):
     return Users.query.get(int(user_id))
+
+# 6. Creating an Admin User for Demo
+# with app.app_context():
+#     admin = Users(
+#         full_name="Admin",
+#         username="admin",
+#         email="admin@moonshot.com",
+#         password=bcrypt.generate_password_hash("password").decode('utf-8'),
+#         role="admin"
+#     )
+#     db.session.add(admin)
+#     db.session.commit()
 
 # Registration Route
 @app.route('/register', methods=["GET", "POST"])
@@ -289,14 +301,3 @@ def admin():
 # def admin_dashboard():
 #     users = Users.query.all()
 #     return render_template("admin.html", users=users)
-
-# 6. (Optional) Creating an Admin User
-# with app.app_context():
-#     admin = Users(
-#         username="admin",
-#         password=bcrypt.generate_password_hash("admin123").decode('utf-8'),
-#         role="admin"
-#     )
-#     db.session.add(admin)
-#     db.session.commit()
-#     print("Admin user created!")
