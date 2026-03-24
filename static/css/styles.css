@@ -97,8 +97,11 @@ body {
     width: 44px;
     height: 44px;
     border-radius: 50%;
-    background-color: #ffffff;
+    background-color: transparent;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .avatar-dropdown {

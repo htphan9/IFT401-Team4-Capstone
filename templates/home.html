@@ -9,8 +9,19 @@
 
 {% block content %}
         {% if current_user.is_authenticated %}
-        <div class="d-flex flex-column align-items-center">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div style="width: 13vw;"></div>
+
             <h1>Welcome back to the Surface, {{ current_user.username }}</h1>
+
+            <div class="card bg-dark border-secondary" style="width: 13vw;">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-1">Available Balance</h6>
+                    <h2 class="card-title mb-0">
+                        ${{ "%.2f"|format(account.balance) if account else "0.00" }}
+                    </h2>
+                </div>
+            </div>
         </div>
 
         <!-- Available Balance from cash.html -->
@@ -24,15 +35,6 @@
                 <h2>User Portfolio</h2>
                 <p>This is visible only to regular users.</p>
                 {% endif %}
-            </div>
-
-            <div class="card bg-dark border-secondary mb-4" style="max-width: 30vw; margin-right: 1vw">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-1">Available Balance</h6>
-                    <h2 class="card-title mb-0">
-                        ${{ "%.2f"|format(account.balance) if account else "0.00" }}
-                    </h2>
-                </div>
             </div>
 
         </div>
