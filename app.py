@@ -120,6 +120,7 @@ def load_user(user_id):
     return Users.query.get(int(user_id))
 
 # 6. Creating an Admin User for Demo
+# Remember to comment this out after run for the first time
 # with app.app_context():
 #     admin = Users(
 #         full_name="Admin",
