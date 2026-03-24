@@ -13,8 +13,15 @@ app = Flask(__name__)
 bcrypt = Bcrypt(app)
 load_dotenv()
 
+# Comment this out for local flask demo
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+
+# # Configuration for Demo
+# app.config['SQLALCHEMY_DATABASE_URI'] = \
+#     'mysql+pymysql://root:password@localhost/capstone_db'
+# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# app.config['SECRET_KEY'] = 'your-secret-key'
 
 # Initialize extensions
 db = SQLAlchemy(app)

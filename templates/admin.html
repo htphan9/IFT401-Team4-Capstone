@@ -1,26 +1,88 @@
 {% extends "base.html" %}
-{% block extra_css %}
-    <!-- <link href="{{ url_for('static', filename='css/admin.css') }}" rel="stylesheet"> -->
-{% endblock %}
+{% block extra_css %}{% endblock %}
 
 {% block title %}Admin - Moonshot{% endblock %}
 
 {% set active_page = "admin" %}
 
 {% block content %}
-        {% if current_user.is_authenticated %}
-        <div class="d-flex flex-column align-items-center">
-            <h1>Welcome to the Admin Panel, {{ current_user.username }}</h1>
-        </div>
-        {% if current_user.role == "admin" %}
-        <h2>Admin</h2>
-        <p>This dashboard is visible only to admins.</p>
-        {% endif %}
-        {% else %}
-        <h1>You are not logged in</h1>
-        {% endif %}
+{% if current_user.is_authenticated and current_user.role == "admin" %}
+
+<h1>Admin Panel</h1>
+
+{% if message %}
+    <p class="text-{{ message_type }}">{{ message }}</p>
+{% endif %}
+
+<!-- Add Stock -->
+<h4 class="mt-4">Add Stock</h4>
+<form action="/admin/add_stock" method="POST" style="max-width: 500px;">
+
+    <div class="mb-3">
+        <label class="form-label text-white">Ticker</label>
+        <input type="text" class="form-control" name="ticker" maxlength="10" required>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label text-white">Company Name</label>
+        <input type="text" class="form-control" name="company_name" required>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label text-white">Starting Price ($)</label>
+        <input type="number" class="form-control" name="initial_price" min="0.01" step="0.01" required>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label text-white">Total Shares</label>
+        <input type="number" class="form-control" name="total_shares_issued" min="1" required>
+    </div>
+
+    <button type="submit" class="btn btn-success">Add Stock</button>
+
+</form>
+
+<!-- Delete Stock  -->
+<h4 class="mt-5">Delete Stock</h4>
+<form action="/admin/delete_stock" method="POST" style="max-width: 500px;">
+
+    <div class="mb-3">
+        <label class="form-label text-white">Select Stock</label>
+        <select class="form-select" name="stock_id" required>
+            <option value="" disabled selected>Choose a stock...</option>
+            {% for stock in stocks %}
+                <option value="{{ stock.id }}">{{ stock.ticker }} — {{ stock.company_name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-danger">Delete Stock</button>
+
+</form>
+
+<!-- Market Hours -->
+<h4 class="mt-5">Market Hours</h4>
+<form action="/admin/update_market" method="POST" style="max-width: 500px;">
+
+    <div class="mb-3">
+        <label class="form-label text-white">Open Time</label>
+        <input type="time" class="form-control" name="open_time"
+               value="{{ market_config.open_time if market_config else '09:00' }}" required>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label text-white">Close Time</label>
+        <input type="time" class="form-control" name="close_time"
+               value="{{ market_config.close_time if market_config else '16:00' }}" required>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Update Market Hours</button>
+
+</form>
+
+{% else %}
+<p>You are not logged in or do not have admin access.</p>
+{% endif %}
 {% endblock %}
 
-{% block extra_js %}
-    
-{% endblock %}
+{% block extra_js %}{% endblock %}
