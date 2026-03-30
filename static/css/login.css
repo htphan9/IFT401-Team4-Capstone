@@ -56,22 +56,7 @@
 }
 
 .btn-green-sm {
-    background-color: var(--green);
-    color: var(--text-primary) !important;
-    border-radius: var(--border-radius);
     padding: 6px 20px;
-    text-decoration: none;
-    font-size: 1rem;
-}
-
-.btn-green-sm:hover {
-    background-color: var(--green-hover);
-    color: var(--text-primary);
-}
-
-.btn-green-sm:focus {
-    background-color: var(--green-hover);
-    color: var(--text-primary);
 }
 
 .bottom-links {

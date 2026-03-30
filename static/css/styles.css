@@ -142,3 +142,54 @@ body {
     padding-left: 40px;
     padding-right: 40px;
 }
+
+.bg-dark {
+    background-color: var(--bg-card) !important;
+}
+
+.card.bg-dark {
+    color: var(--text-primary);
+    background-color: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+}
+
+.table-dark {
+    --bs-table-bg: var(--bg-card);
+    --bs-table-striped-bg: #262626;
+}
+
+.btn-green-sm {
+    background-color: var(--green);
+    color: var(--text-primary) !important;
+    border-radius: var(--border-radius);
+    text-decoration: none;
+    font-size: 1rem;
+}
+
+.btn-green-sm:hover {
+    background-color: var(--green-hover);
+    color: var(--text-primary);
+}
+
+.btn-green-sm:focus {
+    background-color: var(--green-hover);
+    color: var(--text-primary);
+}
+
+.btn-red-sm {
+    background-color: var(--red);
+    color: var(--text-primary) !important;
+    border-radius: var(--border-radius);
+    text-decoration: none;
+    font-size: 1rem;
+}
+
+.btn-red-sm:hover {
+    background-color: var(--red-hover);
+    color: var(--text-primary);
+}
+
+.btn-red-sm:focus {
+    background-color: var(--red-hover);
+    color: var(--text-primary);
+}
