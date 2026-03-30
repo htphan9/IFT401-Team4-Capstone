@@ -192,7 +192,7 @@ def role_required(*roles):
 @login_required # Only logged-in users can access
 def home():
     account = CashAccount.query.filter_by(user_id=current_user.id).first()
-    transactions = Transaction.query.filter_by(user_id=current_user.id).all()
+    transactions = Transaction.query.filter_by(user_id=current_user.id).order_by(Transaction.id.desc()).all()
     stocks = Stock.query.all()
     portfolio = Portfolio.query.filter(Portfolio.user_id == current_user.id, Portfolio.shares_owned > 0).all()
 
@@ -210,7 +210,7 @@ def market():
 @login_required # Only logged-in users can access
 def cash():
     account = CashAccount.query.filter_by(user_id=current_user.id).first()
-    transactions = Transaction.query.filter_by(user_id=current_user.id).all()
+    transactions = Transaction.query.filter_by(user_id=current_user.id).order_by(Transaction.id.desc()).all()
  
     return render_template("cash.html", account=account, transactions=transactions)
 
@@ -270,11 +270,11 @@ def history():
     # Admins see everyone's data; regular users only see their own.
     # filter_by(user_id=...) scopes the query to the logged-in user.
     if current_user.role == "admin":
-        transactions = Transaction.query.all()
-        audit_logs = AuditLog.query.all()
+        transactions = Transaction.query.order_by(Transaction.id.desc()).all()
+        audit_logs = AuditLog.query.order_by(AuditLog.timestamp.desc()).all()
     else:
-        transactions = Transaction.query.filter_by(user_id=current_user.id).all()
-        audit_logs = AuditLog.query.filter_by(user_id=current_user.id).all()
+        transactions = Transaction.query.filter_by(user_id=current_user.id).order_by(Transaction.id.desc()).all()
+        audit_logs = AuditLog.query.filter_by(user_id=current_user.id).order_by(AuditLog.timestamp.desc()).all()
  
     return render_template("history.html", transactions=transactions, audit_logs=audit_logs)
 
