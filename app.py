@@ -288,6 +288,110 @@ def history():
  
     return render_template("history.html", transactions=transactions, audit_logs=audit_logs)
 
+# Trading
+@app.route('/trade', methods=['POST'])
+@login_required
+def trade():
+    # Pull form data
+    stock_id = request.form.get('stock_id', type=int)
+    action = request.form.get('action')        # "buy" or "sell"
+    quantity = request.form.get('quantity', type=int)
+
+    # Basic validation
+    if not stock_id or action not in ('buy', 'sell') or not quantity or quantity < 1:
+        return redirect(url_for('market', error='Invalid trade request.'))
+
+    # Load related records
+    stock = Stock.query.get_or_404(stock_id)
+    cash_account = CashAccount.query.filter_by(user_id=current_user.id).first()
+    portfolio = Portfolio.query.filter_by(
+        user_id=current_user.id,
+        stock_id=stock_id
+    ).first()
+
+    price = stock.current_price
+    total_cost = Decimal(quantity) * price
+
+    # Buy
+    if action == 'buy':
+
+        # Check if market has enough shares
+        if stock.available_inventory < quantity:
+            return redirect(url_for('market', error=f'Not enough shares available. Only {stock.available_inventory} left.'))
+
+        # Check the cash balance
+        if cash_account.balance < total_cost:
+            return redirect(url_for('market', error='Insufficient funds to complete this purchase.'))
+
+        # Deduct cash from user
+        cash_account.balance -= total_cost
+
+        # Reduce market inventory
+        stock.available_inventory -= quantity
+
+        # Update daily high if new price qualifies
+        if stock.daily_high is None or price > stock.daily_high:
+            stock.daily_high = price
+
+        # Add to portfolio (create row if first time buying this stock)
+        if portfolio is None:
+            portfolio = Portfolio(
+                user_id=current_user.id,
+                stock_id=stock_id,
+                cash_account_id=cash_account.id,
+                shares_owned=quantity
+            )
+            db.session.add(portfolio)
+        else:
+            portfolio.shares_owned += quantity
+
+    # Sell
+    elif action == 'sell':
+
+        # Check if the user actually owns enough shares
+        if portfolio is None or portfolio.shares_owned < quantity:
+            owned = portfolio.shares_owned if portfolio else 0
+            return redirect(url_for('market', error=f'You only own {owned} share(s) of {stock.ticker}.'))
+
+        # Add cash back to user
+        cash_account.balance += total_cost
+
+        # Return shares to market inventory
+        stock.available_inventory += quantity
+
+        # Update daily low if new price qualifies
+        if stock.daily_low is None or price < stock.daily_low:
+            stock.daily_low = price
+
+        # Reduce shares in portfolio
+        portfolio.shares_owned -= quantity
+
+    # Record in AuditLog
+    audit = AuditLog(
+        user_id=current_user.id,
+        activity_type=action,
+        description=f'{action.capitalize()} {quantity} share(s) of {stock.ticker} at ${price}'
+    )
+    db.session.add(audit)
+    db.session.flush()  # get audit.id before committing
+
+    # Record in Transaction
+    transaction = Transaction(
+        user_id=current_user.id,
+        stock_id=stock_id,
+        type=action,
+        amount=quantity,
+        price_at_execution=price,
+        status='completed',
+        log_id=audit.id
+    )
+
+    # Send and Save new transactions to the DB
+    db.session.add(transaction)
+    db.session.commit()
+
+    return redirect(url_for('market', success=f'Successfully {action} {quantity} share(s) of {stock.ticker}!'))
+
 # Admin
 @app.route('/admin')
 @login_required # Only logged-in users can access
