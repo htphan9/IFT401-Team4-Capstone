@@ -20,7 +20,9 @@
         <tr>
             <th>#</th>
             <th>Timestamp (MST)</th>
+            {% if current_user.role == "admin" %}
             <th>User</th>
+            {% endif %}
             <th>Type</th>
             <th>Ticker</th>
             <th>Shares</th>
@@ -34,7 +36,9 @@
             <tr>
                 <td>{{ tx.id }}</td>
                 <td>{{ tx.log.timestamp.strftime("%m/%d/%Y %H:%M") if tx.log else "—" }}</td>
+                {% if current_user.role == "admin" %}
                 <td>{{ tx.user.username }}</td>
+                {% endif %}
                 <td>{{ tx.type | capitalize }}</td>
                 <td>{{ tx.stock.ticker }}</td>
                 <td>{{ tx.amount }}</td>
