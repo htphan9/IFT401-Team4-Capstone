@@ -14,6 +14,18 @@
     <h1>Market</h1>
 </div>
 
+<!-- Flash messages (success/error feedback after a trade) -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
 <!-- Stock table — `stocks` is passed in from the /market route in app.py -->
 <table class="table table-striped table-dark">
     <thead>
@@ -26,6 +38,7 @@
             <th>Day Low</th>
             <th>Available Shares</th>
             <th>Total Issued</th>
+            <th></th>
         </tr>
     </thead>
     <tbody>
@@ -40,12 +53,30 @@
                 <td>{{ "$%.2f"|format(stock.daily_low) if stock.daily_low else "—" }}</td>
                 <td>{{ "{:,}".format(stock.available_inventory) }}</td>
                 <td>{{ "{:,}".format(stock.total_shares_issued) }}</td>
+                <td style="padding-right: 0;">
+                    <!-- Pass stock info into the modal via data attributes -->
+                    <button class="btn btn-green-sm trade-btn"
+                            data-stock-id="{{ stock.id }}"
+                            data-ticker="{{ stock.ticker }}"
+                            data-price="{{ stock.current_price }}"
+                            data-action="buy"
+                            data-bs-toggle="modal"
+                            data-bs-target="#tradeModal">Buy</button>
+
+                    <button class="btn btn-red-sm trade-btn"
+                            data-stock-id="{{ stock.id }}"
+                            data-ticker="{{ stock.ticker }}"
+                            data-price="{{ stock.current_price }}"
+                            data-action="sell"
+                            data-bs-toggle="modal"
+                            data-bs-target="#tradeModal">Sell</button>
+                </td>
             </tr>
             {% endfor %}
         {% else %}
             <!-- Shown when the stocks table is empty -->
             <tr>
-                <td colspan="8" class="text-center py-4">
+                <td colspan="9" class="text-center py-4">
                     No stocks in the database yet.
                 </td>
             </tr>
@@ -53,9 +84,47 @@
     </tbody>
 </table>
 
+<!-- Trade Modal -->
+<div class="modal fade" id="tradeModal" tabindex="-1" aria-labelledby="tradeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white">
+
+            <div class="modal-header">
+                <!-- Title updates to "Buy AAPL" or "Sell AAPL" via market.js -->
+                <h5 class="modal-title" id="tradeModalLabel">Trade</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <form method="POST" action="/trade">
+                    <!-- Hidden inputs carry stock_id and action to the backend -->
+                    <input type="hidden" name="stock_id" id="modal-stock-id">
+                    <input type="hidden" name="action"   id="modal-action">
+
+                    <p id="modal-price-display" class="mb-3"></p>
+
+                    <div class="mb-3">
+                        <label for="modal-quantity" class="form-label">Number of Shares</label>
+                        <input type="number" class="form-control" id="modal-quantity"
+                               name="quantity" min="1" value="1" required>
+                    </div>
+
+                    <div class="d-grid">
+                        <!-- Label and colour updated to Buy/Sell via market.js -->
+                        <button type="submit" class="btn" id="modal-submit-btn">Confirm</button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
 {% else %}
 <p>You are not logged in.</p>
 {% endif %}
 {% endblock %}
 
-{% block extra_js %}{% endblock %}
+{% block extra_js %}
+    <script src="{{ url_for('static', filename='js/market.js') }}"></script>
+{% endblock %}
