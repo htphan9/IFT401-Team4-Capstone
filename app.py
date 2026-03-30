@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, url_for, redirect
+from flask import Flask, render_template, request, url_for, redirect, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_bcrypt import Bcrypt
@@ -119,19 +119,6 @@ with app.app_context():
 def load_user(user_id):
     return Users.query.get(int(user_id))
 
-# 6. Creating an Admin User for Demo
-# Remember to comment this out after run for the first time
-# with app.app_context():
-#     admin = Users(
-#         full_name="Admin",
-#         username="admin",
-#         email="admin@moonshot.com",
-#         password=bcrypt.generate_password_hash("password").decode('utf-8'),
-#         role="admin"
-#     )
-#     db.session.add(admin)
-#     db.session.commit()
-
 # Registration Route
 @app.route('/register', methods=["GET", "POST"])
 def register():
@@ -205,8 +192,11 @@ def role_required(*roles):
 @login_required # Only logged-in users can access
 def home():
     account = CashAccount.query.filter_by(user_id=current_user.id).first()
+    transactions = Transaction.query.filter_by(user_id=current_user.id).all()
+    stocks = Stock.query.all()
+    portfolio = Portfolio.query.filter(Portfolio.user_id == current_user.id, Portfolio.shares_owned > 0).all()
 
-    return render_template("home.html", account=account)
+    return render_template("home.html", account=account, transactions=transactions, stocks=stocks, portfolio=portfolio)
 
 # Market
 @app.route('/market')
@@ -299,7 +289,8 @@ def trade():
 
     # Basic validation
     if not stock_id or action not in ('buy', 'sell') or not quantity or quantity < 1:
-        return redirect(url_for('market', error='Invalid trade request.'))
+        flash('Invalid trade request.', 'danger')
+        return redirect(url_for('market'))
 
     # Load related records
     stock = Stock.query.get_or_404(stock_id)
@@ -317,11 +308,13 @@ def trade():
 
         # Check if market has enough shares
         if stock.available_inventory < quantity:
-            return redirect(url_for('market', error=f'Not enough shares available. Only {stock.available_inventory} left.'))
+            flash(f'Not enough shares available. Only {stock.available_inventory} left.', 'danger')
+            return redirect(url_for('market'))
 
         # Check the cash balance
         if cash_account.balance < total_cost:
-            return redirect(url_for('market', error='Insufficient funds to complete this purchase.'))
+            flash('Insufficient funds to complete this purchase.', 'danger')
+            return redirect(url_for('market'))
 
         # Deduct cash from user
         cash_account.balance -= total_cost
@@ -351,7 +344,8 @@ def trade():
         # Check if the user actually owns enough shares
         if portfolio is None or portfolio.shares_owned < quantity:
             owned = portfolio.shares_owned if portfolio else 0
-            return redirect(url_for('market', error=f'You only own {owned} share(s) of {stock.ticker}.'))
+            flash(f'You only own {owned} share(s) of {stock.ticker}.', 'danger')
+            return redirect(url_for('home'))
 
         # Add cash back to user
         cash_account.balance += total_cost
@@ -390,8 +384,11 @@ def trade():
     db.session.add(transaction)
     db.session.commit()
 
-    return redirect(url_for('market', success=f'Successfully {action} {quantity} share(s) of {stock.ticker}!'))
-
+    flash(f'{action.capitalize()} {quantity} share(s) of {stock.ticker} completed!', 'success')
+    # If action was buy, user was probably on market page. If sell, user was probably on portfolio page. 
+    if action == 'sell':
+        return redirect(url_for('home'))
+    return redirect(url_for('market'))
 # Admin
 @app.route('/admin')
 @login_required # Only logged-in users can access

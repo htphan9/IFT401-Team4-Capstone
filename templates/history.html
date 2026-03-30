@@ -18,6 +18,7 @@
     <thead>
         <tr>
             <th>#</th>
+            <th>User</th>
             <th>Type</th>
             <th>Ticker</th>
             <th>Shares</th>
@@ -30,6 +31,7 @@
             {% for tx in transactions %}
             <tr>
                 <td>{{ tx.id }}</td>
+                <td>{{ tx.user.username }}</td>  <!-- joined from Users model -->
                 <td>{{ tx.type | capitalize }}</td>  <!-- "buy" → "Buy" -->
                 <td>{{ tx.stock.ticker }}</td>        <!-- joined from Stock model -->
                 <td>{{ tx.amount }}</td>

@@ -8,36 +8,106 @@
 {% set active_page = "portfolio" %}
 
 {% block content %}
-        {% if current_user.is_authenticated %}
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <div style="width: 13vw;"></div>
+    {% if current_user.is_authenticated %}
 
-            <h1>Welcome back to the Surface, {{ current_user.username }}</h1>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div style="width: 13vw;"></div>
 
-            <div class="card bg-dark border-secondary" style="width: 13vw;">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-1">Available Balance</h6>
-                    <h2 class="card-title mb-0">
-                        ${{ "%.2f"|format(account.balance) if account else "0.00" }}
-                    </h2>
-                </div>
-            </div>
-        </div>
-
+        <h1>Welcome to your Portfolio, {{ current_user.username }}</h1>
+        
         <!-- Available Balance from cash.html -->
-         <div class="d-flex justify-content-between align-items-center">
-
-            <div>
-                {% if current_user.role == "admin" %}
-                <h2>Admin Portfolio</h2>
-                <p>This is visible only to admins.</p>
-                {% elif current_user.role == "user" %}
-                <h2>User Portfolio</h2>
-                <p>This is visible only to regular users.</p>
-                {% endif %}
+        <div class="card bg-dark border-secondary" style="width: 13vw;">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-1">Available Balance</h6>
+                <h2 class="card-title mb-0">
+                    ${{ "%.2f"|format(account.balance) if account else "0.00" }}
+                </h2>
             </div>
-
         </div>
+    </div>
+
+    <!-- Portfolio Table -->
+    <table class="table table-striped table-dark">
+        <thead>
+            <tr>
+                <th>Ticker</th>
+                <th>Company</th>
+                <th>Shares Owned</th>
+                <th>Current Price</th>
+                <th>Total Value</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if portfolio %}
+                {% for item in portfolio %}
+                <tr>
+                    <td>{{ item.stock.ticker }}</td>
+                    <td>{{ item.stock.company_name }}</td>
+                    <td>{{ item.shares_owned }}</td>
+                    <td>${{ "%.2f"|format(item.stock.current_price) }}</td>
+                    <td>${{ "%.2f"|format(item.shares_owned * item.stock.current_price) }}</td>
+                    <td style="padding-right: 0;">
+                        <!-- Pass stock info into the modal via data attributes -->
+                        <button class="btn btn-green-sm trade-btn"
+                                data-stock-id="{{ item.stock.id }}"
+                                data-ticker="{{ item.stock.ticker }}"
+                                data-price="{{ item.stock.current_price }}"
+                                data-action="buy"
+                                data-bs-toggle="modal"
+                                data-bs-target="#tradeModal">Buy</button>
+
+                        <button class="btn btn-red-sm trade-btn"
+                                data-stock-id="{{ item.stock.id }}"
+                                data-ticker="{{ item.stock.ticker }}"
+                                data-price="{{ item.stock.current_price }}"
+                                data-action="sell"
+                                data-bs-toggle="modal"
+                                data-bs-target="#tradeModal">Sell</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-4">You do not own any stocks yet.</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+
+    <!-- Trade Modal -->
+    <div class="modal fade" id="tradeModal" tabindex="-1" aria-labelledby="tradeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white">
+
+                <div class="modal-header">
+                    <h5 class="modal-title" id="tradeModalLabel">Trade</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <form method="POST" action="/trade">
+                        <!-- Hidden inputs carry stock_id and action to the backend -->
+                        <input type="hidden" name="stock_id" id="modal-stock-id">
+                        <input type="hidden" name="action"   id="modal-action">
+
+                        <p id="modal-price-display" class="mb-3"></p>
+
+                        <div class="mb-3">
+                            <label for="modal-quantity" class="form-label">Number of Shares</label>
+                            <input type="number" class="form-control" id="modal-quantity"
+                                   name="quantity" min="1" value="1" required>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn" id="modal-submit-btn">Confirm</button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
 
         {% else %}
         <h1>You are not logged in</h1>
@@ -45,5 +115,5 @@
 {% endblock %}
 
 {% block extra_js %}
-    
+    <script src="{{ url_for('static', filename='js/market.js') }}"></script>
 {% endblock %}

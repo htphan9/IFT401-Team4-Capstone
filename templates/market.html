@@ -14,18 +14,6 @@
     <h1>Market</h1>
 </div>
 
-<!-- Flash messages (success/error feedback after a trade) -->
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        {% for category, message in messages %}
-            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        {% endfor %}
-    {% endif %}
-{% endwith %}
-
 <!-- Stock table — `stocks` is passed in from the /market route in app.py -->
 <table class="table table-striped table-dark">
     <thead>
