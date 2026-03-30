@@ -218,8 +218,14 @@ def cash():
 @login_required
 def deposit():
     amount = Decimal(request.form.get("amount"))
+    MAX_BALANCE = Decimal('9999999999.99')
  
     account = CashAccount.query.filter_by(user_id=current_user.id).first()
+
+    if amount > MAX_BALANCE or (account and account.balance + amount > MAX_BALANCE):
+        flash("Transaction exceeds maximum account balance limit.", "danger")
+        return redirect(url_for("cash"))
+
     if not account:
         # No account yet — create one with this deposit as the starting balance
         account = CashAccount(user_id=current_user.id, balance=amount)
@@ -248,8 +254,9 @@ def withdraw():
  
     # Block the withdrawal if the user doesn't have enough funds
     if not account or account.balance < amount:
-        return render_template("cash.html", account=account, message="Insufficient funds.", message_type="danger")
- 
+        flash("Insufficient funds.", "danger")
+        return redirect(url_for("cash"))
+         
     account.balance -= amount
  
     # Log the withdrawal to the audit log

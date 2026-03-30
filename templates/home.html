@@ -10,18 +10,16 @@
 {% block content %}
     {% if current_user.is_authenticated %}
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div style="width: 13vw;"></div>
-
-        <h1>Welcome to your Portfolio, {{ current_user.username }}</h1>
+    <div class="d-flex w-100 mb-4 align-items-center position-relative">
+        <h1 class="mx-auto text-center col-8">Welcome to your Portfolio, {{ current_user.username }}</h1>
         
         <!-- Available Balance from cash.html -->
-        <div class="card bg-dark border-secondary" style="width: 13vw;">
-            <div class="card-body">
+        <div class="position-absolute end-0 card bg-dark border-secondary text-center" style="min-width: 200px;">
+            <div class="card-body py-2">
                 <h6 class="card-subtitle mb-1">Available Balance</h6>
-                <h2 class="card-title mb-0">
+                <h3 class="card-title mb-0">
                     ${{ "%.2f"|format(account.balance) if account else "0.00" }}
-                </h2>
+                </h3>
             </div>
         </div>
     </div>
