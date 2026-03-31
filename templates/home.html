@@ -34,6 +34,8 @@
                 <th>Shares Owned</th>
                 <th>Current Price</th>
                 <th>Total Value</th>
+                <th>Avg Cost</th>
+                <th>Unrealized P&L</th>
                 <th></th>
             </tr>
         </thead>
@@ -46,6 +48,8 @@
                     <td>{{ item.shares_owned }}</td>
                     <td>${{ "%.2f"|format(item.stock.current_price) }}</td>
                     <td>${{ "%.2f"|format(item.shares_owned * item.stock.current_price) }}</td>
+                    <td>${{ "%.2f"|format(item.avg_cost) }}</td>
+                    <td class="{{ 'text-success' if item.unrealized_pnl >= 0 else 'text-danger' }}">{{ '+' if item.unrealized_pnl >= 0 else '' }}${{ "%.2f"|format(item.unrealized_pnl) }}</td>
                     <td style="padding-right: 0;">
                         <!-- Pass stock info into the modal via data attributes -->
                         <button class="btn btn-green-sm trade-btn"
@@ -68,7 +72,7 @@
                 {% endfor %}
             {% else %}
                 <tr>
-                    <td colspan="6" class="text-center py-4">You do not own any stocks yet.</td>
+                    <td colspan="8" class="text-center py-4">You do not own any stocks yet.</td>
                 </tr>
             {% endif %}
         </tbody>
