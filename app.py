@@ -198,13 +198,33 @@ def home():
 
     portfolio = []
     for pos in positions:
-        buy_txns = Transaction.query.filter_by(user_id=current_user.id, stock_id=pos.stock_id, type='buy').all()
-        total_spent = sum(t.price_at_execution * t.amount for t in buy_txns)
-        total_bought = sum(t.amount for t in buy_txns)
-        avg_cost = (total_spent / total_bought) if total_bought else Decimal('0')
-        market_value = pos.stock.current_price * pos.shares_owned
+        # Get buy transactions for this stock, newest first
+        buy_txns = Transaction.query.filter_by(
+            user_id=current_user.id, stock_id=pos.stock_id, type='buy'
+        ).order_by(Transaction.id.desc()).all()
+
+        # Walk through buy transactions to find cost basis for current shares
+        shares_to_account = pos.shares_owned
+        total_cost = Decimal('0')
+
+        for txn in buy_txns:
+            if shares_to_account <= 0:
+                break
+            # How many shares from this transaction still apply
+            applicable = min(txn.amount, shares_to_account)
+            total_cost += Decimal(str(txn.price_at_execution)) * applicable
+            shares_to_account -= applicable
+
+        # Average cost per share based on what you currently own
+        if pos.shares_owned > 0:
+            avg_cost = total_cost / pos.shares_owned
+        else:
+            avg_cost = Decimal('0')
+
+        market_value = Decimal(str(pos.stock.current_price)) * pos.shares_owned
         pos.avg_cost = avg_cost
-        pos.unrealized_pnl = market_value - (avg_cost * pos.shares_owned)
+        pos.price_at_execution = Decimal(str(buy_txns[0].price_at_execution)) if buy_txns else Decimal('0')
+        pos.unrealized_pnl = market_value - total_cost
         portfolio.append(pos)
 
     return render_template("home.html", account=account, transactions=transactions, stocks=stocks, portfolio=portfolio)
