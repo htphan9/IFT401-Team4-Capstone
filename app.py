@@ -189,12 +189,23 @@ def role_required(*roles):
 
 # Protected Home Route
 @app.route('/')
-@login_required # Only logged-in users can access
+@login_required
 def home():
     account = CashAccount.query.filter_by(user_id=current_user.id).first()
     transactions = Transaction.query.filter_by(user_id=current_user.id).order_by(Transaction.id.desc()).all()
     stocks = Stock.query.all()
-    portfolio = Portfolio.query.filter(Portfolio.user_id == current_user.id, Portfolio.shares_owned > 0).all()
+    positions = Portfolio.query.filter(Portfolio.user_id == current_user.id, Portfolio.shares_owned > 0).all()
+
+    portfolio = []
+    for pos in positions:
+        buy_txns = Transaction.query.filter_by(user_id=current_user.id, stock_id=pos.stock_id, type='buy').all()
+        total_spent = sum(t.price_at_execution * t.amount for t in buy_txns)
+        total_bought = sum(t.amount for t in buy_txns)
+        avg_cost = (total_spent / total_bought) if total_bought else Decimal('0')
+        market_value = pos.stock.current_price * pos.shares_owned
+        pos.avg_cost = avg_cost
+        pos.unrealized_pnl = market_value - (avg_cost * pos.shares_owned)
+        portfolio.append(pos)
 
     return render_template("home.html", account=account, transactions=transactions, stocks=stocks, portfolio=portfolio)
 
