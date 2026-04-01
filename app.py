@@ -8,6 +8,9 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 import os
 from decimal import Decimal
+import threading
+import time
+import random
 
 app = Flask(__name__)
 bcrypt = Bcrypt(app)
@@ -110,9 +113,38 @@ class Portfolio(db.Model):
     cash_account = db.relationship('CashAccount', backref='portfolios')
     shares_owned = db.Column(db.Integer, nullable=False, default=0)
 
+# Update stock prices every 5 minutes
+def update_prices(app):
+    while True:
+        time.sleep(300)
+        with app.app_context():
+            stocks = Stock.query.all()
+            for stock in stocks:
+                change = random.uniform(-0.05, 0.05)
+                new_price = stock.current_price * Decimal(str(1 + change))
+                new_price = round(new_price, 2)
+
+                # Keep price from going below $1
+                if new_price < Decimal('1.00'):
+                    new_price = Decimal('1.00')
+
+                stock.current_price = new_price
+
+                # Update daily high and low
+                if stock.daily_high is None or new_price > stock.daily_high:
+                    stock.daily_high = new_price
+                if stock.daily_low is None or new_price < stock.daily_low:
+                    stock.daily_low = new_price
+
+            db.session.commit()
+
 # Initialize database
 with app.app_context():
     db.create_all()
+
+# Start background thread for price updates
+thread = threading.Thread(target=update_prices, args=(app,), daemon=True)
+thread.start()
 
 # User loader - required by Flask-Login
 @login_manager.user_loader
