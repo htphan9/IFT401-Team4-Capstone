@@ -12,7 +12,7 @@
 
     <div class="d-flex w-100 mb-4 align-items-center position-relative">
         <h1 class="mx-auto text-center col-8">Welcome to your Portfolio, {{ current_user.username }}</h1>
-        
+
         <!-- Available Balance from cash.html -->
         <div class="position-absolute end-0 card bg-dark border-secondary text-center" style="min-width: 200px;">
             <div class="card-body py-2">
@@ -43,18 +43,19 @@
         <tbody>
             {% if portfolio %}
                 {% for item in portfolio %}
-                <tr>
+                <tr data-shares="{{ item.shares_owned }}" data-avg-cost="{{ item.avg_cost }}">
                     <td>{{ item.stock.ticker }}</td>
                     <td>{{ item.stock.company_name }}</td>
                     <td>{{ item.shares_owned }}</td>
-                    <td>${{ "%.2f"|format(item.stock.current_price) }}</td>
-                    <td>${{ "%.2f"|format(item.shares_owned * item.stock.current_price) }}</td>
+                    <td id="price-{{ item.stock.id }}">${{ "%.2f"|format(item.stock.current_price) }}</td>
+                    <td id="value-{{ item.stock.id }}">${{ "%.2f"|format(item.shares_owned * item.stock.current_price) }}</td>
                     <td>${{ "%.2f"|format(item.price_at_execution) }}</td>
                     <td>${{ "%.2f"|format(item.avg_cost) }}</td>
-                    <td class="{{ 'text-success' if item.unrealized_pnl >= 0 else 'text-danger' }}">{{ '+' if item.unrealized_pnl >= 0 else '-' }}${{ "%.2f"|format(item.unrealized_pnl|abs) }}</td>
+                    <td id="pnl-{{ item.stock.id }}" class="{{ 'text-success' if item.unrealized_pnl >= 0 else 'text-danger' }}">{{ '+' if item.unrealized_pnl >= 0 else '-' }}${{ "%.2f"|format(item.unrealized_pnl|abs) }}</td>
                     <td style="padding-right: 0;">
                         <!-- Pass stock info into the modal via data attributes -->
                         <button class="btn btn-green-sm trade-btn"
+                                id="buy-btn-{{ item.stock.id }}"
                                 data-stock-id="{{ item.stock.id }}"
                                 data-ticker="{{ item.stock.ticker }}"
                                 data-price="{{ item.stock.current_price }}"
@@ -63,6 +64,7 @@
                                 data-bs-target="#tradeModal">Buy</button>
 
                         <button class="btn btn-red-sm trade-btn"
+                                id="sell-btn-{{ item.stock.id }}"
                                 data-stock-id="{{ item.stock.id }}"
                                 data-ticker="{{ item.stock.ticker }}"
                                 data-price="{{ item.stock.current_price }}"

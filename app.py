@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, url_for, redirect, flash
+from flask import Flask, render_template, request, url_for, redirect, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_bcrypt import Bcrypt
@@ -76,8 +76,8 @@ class AuditLog(db.Model):
 # Market model
 class MarketConfiguration(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    market_hours = db.Column(db.String(100), nullable=False)
-    market_schedule = db.Column(db.String(100), nullable=False)
+    open_time = db.Column(db.String(5), nullable=False, default='09:30')
+    close_time = db.Column(db.String(5), nullable=False, default='16:00')
 
 # Transactions model
 class Transaction(db.Model):
@@ -113,11 +113,41 @@ class Portfolio(db.Model):
     cash_account = db.relationship('CashAccount', backref='portfolios')
     shares_owned = db.Column(db.Integer, nullable=False, default=0)
 
+# Check if the market is currently open
+def is_market_open():
+    now = az_time()
+
+    # Market is closed on weekends (Saturday=5, Sunday=6)
+    if now.weekday() >= 5:
+        return False
+
+    # Check if today is a holiday
+    today = now.date()
+    holiday = Holiday.query.filter_by(holiday_date=today).first()
+    if holiday:
+        return False
+
+    # Check market hours from the database
+    config = MarketConfiguration.query.first()
+    if not config:
+        return False
+
+    open_parts = config.open_time.split(':')
+    close_parts = config.close_time.split(':')
+    open_time = now.replace(hour=int(open_parts[0]), minute=int(open_parts[1]), second=0)
+    close_time = now.replace(hour=int(close_parts[0]), minute=int(close_parts[1]), second=0)
+
+    return open_time <= now <= close_time
+
 # Update stock prices every 5 minutes
 def update_prices(app):
     while True:
-        time.sleep(300)
+        time.sleep(300) # 300 for 5 minutes
         with app.app_context():
+            # Skip price updates when the market is closed
+            if not is_market_open():
+                continue
+
             stocks = Stock.query.all()
             for stock in stocks:
                 change = random.uniform(-0.05, 0.05)
@@ -219,6 +249,21 @@ def role_required(*roles):
         return decorated_function
     return decorator
 
+# API endpoint for getting current stock prices
+@app.route('/api/prices')
+@login_required
+def api_prices():
+    stocks = Stock.query.all()
+    data = {}
+    for stock in stocks:
+        data[str(stock.id)] = {
+            'price': float(stock.current_price),
+            'high': float(stock.daily_high) if stock.daily_high else None,
+            'low': float(stock.daily_low) if stock.daily_low else None,
+            'available': stock.available_inventory
+        }
+    return jsonify(data)
+
 # Protected Home Route
 @app.route('/')
 @login_required
@@ -259,15 +304,16 @@ def home():
         pos.unrealized_pnl = market_value - total_cost
         portfolio.append(pos)
 
-    return render_template("home.html", account=account, transactions=transactions, stocks=stocks, portfolio=portfolio)
+    return render_template("home.html", account=account, transactions=transactions, stocks=stocks, portfolio=portfolio, is_open=is_market_open())
 
 # Market
 @app.route('/market')
 @login_required # Only logged-in users can access
 def market():
     stocks = Stock.query.all()
-    return render_template("market.html", stocks=stocks)
-
+    account = CashAccount.query.filter_by(user_id=current_user.id).first()
+    return render_template("market.html", stocks=stocks, is_open=is_market_open(), account=account)
+    
 # Cash
 @app.route('/cash')
 @login_required # Only logged-in users can access
@@ -275,7 +321,7 @@ def cash():
     account = CashAccount.query.filter_by(user_id=current_user.id).first()
     transactions = Transaction.query.filter_by(user_id=current_user.id).order_by(Transaction.id.desc()).all()
  
-    return render_template("cash.html", account=account, transactions=transactions)
+    return render_template("cash.html", account=account, transactions=transactions, is_open=is_market_open())
 
 @app.route('/cash/deposit', methods=["POST"])
 @login_required
@@ -295,7 +341,9 @@ def deposit():
         db.session.add(account)
     else:
         account.balance += amount
- 
+    
+    flash(f'Deposit of ${amount:.2f} successful.', 'success') 
+
     # Log the deposit to the audit log
     log = AuditLog(
         user_id=current_user.id,
@@ -322,6 +370,8 @@ def withdraw():
          
     account.balance -= amount
  
+    flash(f'Withdrawal of ${amount:.2f} successful.', 'success')
+
     # Log the withdrawal to the audit log
     log = AuditLog(
         user_id=current_user.id,
@@ -346,12 +396,17 @@ def history():
         transactions = Transaction.query.filter_by(user_id=current_user.id).order_by(Transaction.id.desc()).all()
         audit_logs = AuditLog.query.filter_by(user_id=current_user.id).order_by(AuditLog.timestamp.desc()).all()
  
-    return render_template("history.html", transactions=transactions, audit_logs=audit_logs)
+    return render_template("history.html", transactions=transactions, audit_logs=audit_logs, is_open=is_market_open())
 
 # Trading
 @app.route('/trade', methods=['POST'])
 @login_required
 def trade():
+    # Block trades when the market is closed
+    if not is_market_open():
+        flash('The market is currently closed. Trades cannot be executed.', 'danger')
+        return redirect(url_for('market'))
+
     # Pull form data
     stock_id = request.form.get('stock_id', type=int)
     action = request.form.get('action')        # "buy" or "sell"
@@ -464,12 +519,27 @@ def trade():
 @login_required # Only logged-in users can access
 @admin_required # Only Admins can access
 def admin():
-    return render_template("admin.html")
+    stocks = Stock.query.all()
+    market_config = MarketConfiguration.query.first()
+    holidays = Holiday.query.order_by(Holiday.holiday_date).all()
+    return render_template("admin.html", stocks=stocks, market_config=market_config, holidays=holidays, is_open=is_market_open())
 
-# Usage examples:
-# @app.route('/admin')
-# @login_required
-# @admin_required
-# def admin_dashboard():
-#     users = Users.query.all()
-#     return render_template("admin.html", users=users)
+# Update market hours
+@app.route('/admin/update_market', methods=['POST'])
+@login_required
+@admin_required
+def update_market():
+    open_time = request.form.get('open_time')
+    close_time = request.form.get('close_time')
+
+    config = MarketConfiguration.query.first()
+    if not config:
+        config = MarketConfiguration(open_time=open_time, close_time=close_time)
+        db.session.add(config)
+    else:
+        config.open_time = open_time
+        config.close_time = close_time
+
+    db.session.commit()
+    flash('Market hours updated.', 'success')
+    return redirect(url_for('admin'))

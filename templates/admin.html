@@ -51,7 +51,7 @@
         <select class="form-select" name="stock_id" required>
             <option value="" disabled selected>Choose a stock...</option>
             {% for stock in stocks %}
-                <option value="{{ stock.id }}">{{ stock.ticker }} — {{ stock.company_name }}</option>
+                <option value="{{ stock.id }}">{{ stock.ticker }}: {{ stock.company_name }}</option>
             {% endfor %}
         </select>
     </div>
@@ -61,7 +61,7 @@
 </form>
 
 <!-- Market Hours -->
-<h4 class="mt-5">Market Hours</h4>
+<h4 class="mt-5">Market Hours (MST)</h4>
 <form action="/admin/update_market" method="POST" style="max-width: 500px;">
 
     <div class="mb-3">

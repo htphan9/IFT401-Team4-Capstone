@@ -94,7 +94,6 @@ body {
 
 .avatar-wrapper {
     position: relative;
-    margin-left: auto;
 }
 
 .user-avatar {
@@ -151,6 +150,8 @@ body {
     color: var(--text-primary);
     background-color: var(--bg-card) !important;
     border-color: var(--border-color) !important;
+    padding-right: 30px;
+    padding-left: 30px;
 }
 
 .table-dark {
@@ -192,4 +193,44 @@ body {
 .btn-red-sm:focus {
     background-color: var(--red-hover);
     color: var(--text-primary);
+}
+
+.market-status-dot {
+    margin-left: auto;
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.market-status {
+     margin-left: 4px; 
+     margin-right: 12px;
+}
+
+.flash-container {
+    position: fixed;
+    top: 90px;
+    right: 24px;
+    z-index: 200;
+    width: 350px;
+}
+
+.alert {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+
+}
+
+.alert-success {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.alert-danger {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
 }

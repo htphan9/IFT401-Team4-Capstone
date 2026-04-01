@@ -10,8 +10,18 @@
 {% block content %}
 {% if current_user.is_authenticated %}
 
-<div class="d-flex flex-column align-items-center">
-    <h1>Market</h1>
+<div class="d-flex w-100 mb-4 align-items-center position-relative">
+    <h1 class="mx-auto text-center col-8">Market</h1>
+    
+    <!-- Available Balance from cash.html -->
+    <div class="position-absolute end-0 card bg-dark border-secondary text-center" style="min-width: 200px;">
+        <div class="card-body py-2">
+            <h6 class="card-subtitle mb-1">Available Balance</h6>
+            <h3 class="card-title mb-0">
+                ${{ "%.2f"|format(account.balance) if account else "0.00" }}
+            </h3>
+        </div>
+    </div>
 </div>
 
 <!-- Stock table — `stocks` is passed in from the /market route in app.py -->
@@ -36,15 +46,16 @@
             <tr>
                 <td>{{ stock.ticker }}</td>
                 <td>{{ stock.company_name }}</td>
-                <td>${{ "%.2f"|format(stock.current_price) }}</td>
+                <td id="price-{{ stock.id }}">${{ "%.2f"|format(stock.current_price) }}</td>
                 <td>${{ "%.2f"|format(stock.opening_price) }}</td>
-                <td>{{ "$%.2f"|format(stock.daily_high) if stock.daily_high else "—" }}</td>
-                <td>{{ "$%.2f"|format(stock.daily_low) if stock.daily_low else "—" }}</td>
-                <td>{{ "{:,}".format(stock.available_inventory) }}</td>
+                <td id="high-{{ stock.id }}">{{ "$%.2f"|format(stock.daily_high) if stock.daily_high else "—" }}</td>
+                <td id="low-{{ stock.id }}">{{ "$%.2f"|format(stock.daily_low) if stock.daily_low else "—" }}</td>
+                <td id="available-{{ stock.id }}">{{ "{:,}".format(stock.available_inventory) }}</td>
                 <td>{{ "{:,}".format(stock.total_shares_issued) }}</td>
                 <td style="padding-right: 0;">
                     <!-- Pass stock info into the modal via data attributes -->
                     <button class="btn btn-green-sm trade-btn"
+                            id="buy-btn-{{ stock.id }}"
                             data-stock-id="{{ stock.id }}"
                             data-ticker="{{ stock.ticker }}"
                             data-price="{{ stock.current_price }}"
