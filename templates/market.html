@@ -17,7 +17,7 @@
     <div class="position-absolute end-0 card bg-dark border-secondary text-center" style="min-width: 200px;">
         <div class="card-body py-2">
             <h6 class="card-subtitle mb-1">Available Balance</h6>
-            <h3 class="card-title mb-0">
+            <h3 class="card-title mb-0" id="user-balance" data-balance="{{ account.balance if account else 0 }}">
                 ${{ "%.2f"|format(account.balance) if account else "0.00" }}
             </h3>
         </div>
@@ -59,6 +59,9 @@
                             data-stock-id="{{ stock.id }}"
                             data-ticker="{{ stock.ticker }}"
                             data-price="{{ stock.current_price }}"
+                            data-available="{{ stock.available_inventory }}"
+                            data-owned="{{ user_holdings[stock.id].shares_owned if stock.id in user_holdings else 0 }}"
+                            data-avg-cost="{{ user_holdings[stock.id].avg_cost if stock.id in user_holdings else 0 }}"
                             data-action="buy"
                             data-bs-toggle="modal"
                             data-bs-target="#tradeModal">Buy</button>
@@ -96,15 +99,35 @@
 
                     <p id="modal-price-display" class="mb-3"></p>
 
+                    <!-- Trade summary info -->
                     <div class="mb-3">
-                        <label for="modal-quantity" class="form-label">Number of Shares</label>
-                        <input type="number" class="form-control" id="modal-quantity"
+                        <p class="mb-1">Shares You Own: <strong id="modal-owned">0</strong></p>
+                        <p class="mb-1">Total Cost: <strong id="modal-total-cost">$0.00</strong></p>
+                        <p class="mb-1">Estimated Balance After Trade: <strong id="modal-remaining">$0.00</strong></p>
+                        <p class="mb-1 d-none" id="modal-pnl-row">Estimated P&L: <strong id="modal-pnl">$0.00</strong></p>
+                    </div>
+
+                    <!-- Warning message -->
+                    <p id="modal-warning" class="text-danger d-none"></p>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <label for="modal-quantity" class="form-label mb-0">Number of Shares</label>
+                            <button type="button" class="btn btn-outline-light btn-sm" id="modal-max-btn">Max</button>
+                        </div>
+                        <input type="number" class="form-control mt-1" id="modal-quantity"
                                name="quantity" min="1" value="1" required>
                     </div>
 
+                    <!-- Typed confirmation -->
+                    <div class="mb-3">
+                        <label for="modal-confirm" class="form-label">Type "<span id="modal-confirm-word">buy</span>" to confirm</label>
+                        <input type="text" class="form-control" id="modal-confirm" autocomplete="off">
+                    </div>
+
                     <div class="d-grid">
-                        <!-- Label and colour updated to Buy/Sell via market.js -->
-                        <button type="submit" class="btn" id="modal-submit-btn">Confirm</button>
+                        <!-- Button starts disabled until confirmation word matches -->
+                        <button type="submit" class="btn" id="modal-submit-btn" disabled>Confirm</button>
                     </div>
                 </form>
             </div>

@@ -139,6 +139,43 @@ def is_market_open():
 
     return open_time <= now <= close_time
 
+# Get a user's portfolio holdings with average cost per stock
+def get_user_holdings(user_id):
+    positions = Portfolio.query.filter(
+        Portfolio.user_id == user_id,
+        Portfolio.shares_owned > 0
+    ).all()
+
+    holdings = {}
+    for pos in positions:
+        buy_txns = Transaction.query.filter_by(
+            user_id=user_id, stock_id=pos.stock_id, type='buy'
+        ).order_by(Transaction.id.desc()).all()
+
+        shares_to_account = pos.shares_owned
+        total_cost = Decimal('0')
+        for txn in buy_txns:
+            if shares_to_account <= 0:
+                break
+            applicable = min(txn.amount, shares_to_account)
+            total_cost += Decimal(str(txn.price_at_execution)) * applicable
+            shares_to_account -= applicable
+
+        if pos.shares_owned > 0:
+            avg_cost = total_cost / pos.shares_owned
+        else:
+            avg_cost = Decimal('0')
+
+        holdings[pos.stock_id] = {
+            'position': pos,
+            'shares_owned': pos.shares_owned,
+            'avg_cost': avg_cost,
+            'total_cost': total_cost
+        }
+
+    return holdings
+
+
 # Update stock prices every 5 minutes
 def update_prices(app):
     while True:
@@ -271,32 +308,17 @@ def home():
     account = CashAccount.query.filter_by(user_id=current_user.id).first()
     transactions = Transaction.query.filter_by(user_id=current_user.id).order_by(Transaction.id.desc()).all()
     stocks = Stock.query.all()
-    positions = Portfolio.query.filter(Portfolio.user_id == current_user.id, Portfolio.shares_owned > 0).all()
+    holdings = get_user_holdings(current_user.id)
 
     portfolio = []
-    for pos in positions:
-        # Get buy transactions for this stock, newest first
+    for stock_id, data in holdings.items():
+        pos = data['position']
+        avg_cost = data['avg_cost']
+        total_cost = data['total_cost']
+
         buy_txns = Transaction.query.filter_by(
-            user_id=current_user.id, stock_id=pos.stock_id, type='buy'
+            user_id=current_user.id, stock_id=stock_id, type='buy'
         ).order_by(Transaction.id.desc()).all()
-
-        # Walk through buy transactions to find cost basis for current shares
-        shares_to_account = pos.shares_owned
-        total_cost = Decimal('0')
-
-        for txn in buy_txns:
-            if shares_to_account <= 0:
-                break
-            # How many shares from this transaction still apply
-            applicable = min(txn.amount, shares_to_account)
-            total_cost += Decimal(str(txn.price_at_execution)) * applicable
-            shares_to_account -= applicable
-
-        # Average cost per share based on what you currently own
-        if pos.shares_owned > 0:
-            avg_cost = total_cost / pos.shares_owned
-        else:
-            avg_cost = Decimal('0')
 
         market_value = Decimal(str(pos.stock.current_price)) * pos.shares_owned
         pos.avg_cost = avg_cost
@@ -312,8 +334,17 @@ def home():
 def market():
     stocks = Stock.query.all()
     account = CashAccount.query.filter_by(user_id=current_user.id).first()
-    return render_template("market.html", stocks=stocks, is_open=is_market_open(), account=account)
-    
+    holdings = get_user_holdings(current_user.id)
+
+    # Convert to a simpler dict for the template
+    user_holdings = {}
+    for stock_id, data in holdings.items():
+        user_holdings[stock_id] = {
+            'shares_owned': data['shares_owned'],
+            'avg_cost': round(float(data['avg_cost']), 2)
+        }
+
+    return render_template("market.html", stocks=stocks, is_open=is_market_open(), account=account, user_holdings=user_holdings)    
 # Cash
 @app.route('/cash')
 @login_required # Only logged-in users can access
