@@ -227,10 +227,26 @@ body {
     background-color: var(--bg-card);
     color: var(--text-primary);
     border: 1px solid var(--border-color);
+    animation: flashGreen 0.6s ease-out 0.4s;
+    animation-fill-mode: backwards;
 }
 
 .alert-danger {
     background-color: var(--bg-card);
     color: var(--text-primary);
     border: 1px solid var(--border-color);
+    animation: flashRed 0.6s ease-out 0.4s;
+    animation-fill-mode: backwards;
+}
+
+@keyframes flashGreen {
+    0% { background-color: var(--bg-card); }
+    50%   { background-color: var(--green); }
+    100% { background-color: var(--bg-card); }
+}
+
+@keyframes flashRed {
+    0% { background-color: var(--bg-card); }
+    50%   { background-color: var(--red); }
+    100% { background-color: var(--bg-card); }
 }
