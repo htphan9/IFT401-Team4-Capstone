@@ -4,7 +4,7 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 from flask_bcrypt import Bcrypt
 from functools import wraps
 from dotenv import load_dotenv
-from datetime import datetime
+from datetime import datetime, date
 from zoneinfo import ZoneInfo
 import os
 from decimal import Decimal
@@ -208,6 +208,36 @@ def update_prices(app):
 # Initialize database
 with app.app_context():
     db.create_all()
+
+    # Hardcode 2026 US stock market holidays
+    # Only inserts if the holiday table is empty — prevents duplicates on restart
+    if Holiday.query.count() == 0:
+
+        # Get the market config id (holidays need a market_id foreign key)
+        config = MarketConfiguration.query.first()
+
+        if config:
+            holidays_2026 = [
+                (date(2026, 1,  1),  "New Year's Day"),
+                (date(2026, 1, 19),  "Martin Luther King Jr. Day"),
+                (date(2026, 2, 16),  "Presidents' Day"),
+                (date(2026, 4, 18),  "Good Friday"),
+                (date(2026, 5, 25),  "Memorial Day"),
+                (date(2026, 7,  3),  "Independence Day (observed)"),
+                (date(2026, 9,  7),  "Labor Day"),
+                (date(2026, 11, 26), "Thanksgiving Day"),
+                (date(2026, 12, 25), "Christmas Day"),
+            ]
+
+            for holiday_date, description in holidays_2026:
+                holiday = Holiday(
+                    market_id=config.id,
+                    holiday_date=holiday_date,
+                    description=description
+                )
+                db.session.add(holiday)
+
+            db.session.commit()
 
 # Start background thread for price updates
 thread = threading.Thread(target=update_prices, args=(app,), daemon=True)
