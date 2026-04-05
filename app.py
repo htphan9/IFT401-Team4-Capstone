@@ -617,3 +617,40 @@ def add_stock():
 
     flash(f'{ticker} added successfully.', 'success')
     return redirect(url_for('admin'))
+
+# Delete a stock
+@app.route('/admin/delete_stock', methods=['POST'])
+@login_required
+@admin_required
+def delete_stock():
+    stock_id = request.form.get('stock_id', type=int)
+
+    # Load the stock
+    stock = Stock.query.get_or_404(stock_id)
+
+    # Block the delete if any transactions reference this stock
+    existing_transactions = Transaction.query.filter_by(stock_id=stock_id).first()
+    if existing_transactions:
+        flash(f'Cannot delete {stock.ticker} — it has existing transactions.', 'danger')
+        return redirect(url_for('admin'))
+
+    # Safe to delete — clean up any lingering portfolio rows first
+    # (e.g. a user bought then sold back to 0 shares)
+    Portfolio.query.filter_by(stock_id=stock_id).delete()
+
+    # Delete the stock itself
+    db.session.delete(stock)
+
+    # Log the action
+    audit = AuditLog(
+        user_id=current_user.id,
+        activity_type='delete_stock',
+        description=f'Deleted stock {stock.ticker} ({stock.company_name})'
+    )
+    db.session.add(audit)
+
+    # Commit everything at once
+    db.session.commit()
+
+    flash(f'{stock.ticker} deleted successfully.', 'success')
+    return redirect(url_for('admin'))
