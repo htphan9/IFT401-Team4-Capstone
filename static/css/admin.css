@@ -1,31 +1,26 @@
- /* Center and constrain the page content */
-.admin-container {
-    max-width: 560px;
-    margin: 0 auto;
+/* Fixed card width — same approach as cash.html's inline style="width: 15vw" */
+.admin-card {
+    width: 22vw;
+    min-width: 280px;
 }
- 
-/* Constrain form width — replaces inline style="max-width: 500px" */
-.admin-form {
-    max-width: 500px;
-}
- 
-/* Dark themed form controls to match the site */
-.admin-input {
-    background-color: var(--bg-secondary);
-    border: 1px solid var(--border-color);
+
+/* Dark form controls — copied directly from cash.css */
+.form-control {
+    background-color: #1f1f1f;
+    border-color: var(--border-color);
     color: var(--text-primary);
     color-scheme: dark; /* fixes browser chrome on date/time inputs */
 }
- 
-.admin-input:focus {
-    background-color: var(--bg-secondary);
-    border-color: #444444;
+
+.form-control:focus {
+    background-color: #1f1f1f;
+    border-color: #444;
     color: var(--text-primary);
     box-shadow: none;
 }
- 
+
 /* Keep dropdown options readable on dark background */
-.admin-input option {
-    background-color: var(--bg-secondary);
+.form-control option {
+    background-color: #1f1f1f;
     color: var(--text-primary);
 }
