@@ -1,5 +1,7 @@
 {% extends "base.html" %}
-{% block extra_css %}{% endblock %}
+{% block extra_css %}
+    <link href="{{ url_for('static', filename='css/admin.css') }}" rel="stylesheet">
+{% endblock %}
 
 {% block title %}Admin - Moonshot{% endblock %}
 
@@ -8,131 +10,136 @@
 {% block content %}
 {% if current_user.is_authenticated and current_user.role == "admin" %}
 
-<h1>Admin Panel</h1>
+<!-- Centered container -->
+<div class="admin-container">
 
-{% if message %}
-    <p class="text-{{ message_type }}">{{ message }}</p>
-{% endif %}
+    <h1>Admin Panel</h1>
 
-<!-- Add Stock -->
-<h4 class="mt-4">Add Stock</h4>
-<form action="/admin/add_stock" method="POST" style="max-width: 500px;">
+    {% if message %}
+        <p class="text-{{ message_type }}">{{ message }}</p>
+    {% endif %}
 
-    <div class="mb-3">
-        <label class="form-label text-white">Ticker</label>
-        <input type="text" class="form-control" name="ticker" maxlength="10" required>
-    </div>
+    <!-- Add Stock -->
+    <h4 class="mt-4">Add Stock</h4>
+    <form action="/admin/add_stock" method="POST" class="admin-form">
 
-    <div class="mb-3">
-        <label class="form-label text-white">Company Name</label>
-        <input type="text" class="form-control" name="company_name" required>
-    </div>
+        <div class="mb-3">
+            <label class="form-label text-white">Ticker</label>
+            <input type="text" class="form-control admin-input" name="ticker" maxlength="10" required>
+        </div>
 
-    <div class="mb-3">
-        <label class="form-label text-white">Starting Price ($)</label>
-        <input type="number" class="form-control" name="initial_price" min="0.01" step="0.01" required>
-    </div>
+        <div class="mb-3">
+            <label class="form-label text-white">Company Name</label>
+            <input type="text" class="form-control admin-input" name="company_name" required>
+        </div>
 
-    <div class="mb-3">
-        <label class="form-label text-white">Initial Volume</label>
-        <input type="number" class="form-control" name="initial_volume_issued" min="1" required>
-    </div>
+        <div class="mb-3">
+            <label class="form-label text-white">Starting Price ($)</label>
+            <input type="number" class="form-control admin-input" name="initial_price" min="0.01" step="0.01" required>
+        </div>
 
-    <button type="submit" class="btn btn-success">Add Stock</button>
+        <div class="mb-3">
+            <label class="form-label text-white">Initial Volume</label>
+            <input type="number" class="form-control admin-input" name="initial_volume_issued" min="1" required>
+        </div>
 
-</form>
+        <button type="submit" class="btn btn-green-sm px-4 py-2">Add Stock</button>
 
-<!-- Delete Stock  -->
-<h4 class="mt-5">Delete Stock</h4>
-<form action="/admin/delete_stock" method="POST" style="max-width: 500px;">
+    </form>
 
-    <div class="mb-3">
-        <label class="form-label text-white">Select Stock</label>
-        <select class="form-select" name="stock_id" required>
-            <option value="" disabled selected>Choose a stock...</option>
-            {% for stock in stocks %}
-                <option value="{{ stock.id }}">{{ stock.ticker }}: {{ stock.company_name }}</option>
+    <!-- Delete Stock -->
+    <h4 class="mt-5">Delete Stock</h4>
+    <form action="/admin/delete_stock" method="POST" class="admin-form">
+
+        <div class="mb-3">
+            <label class="form-label text-white">Select Stock</label>
+            <select class="form-select admin-input" name="stock_id" required>
+                <option value="" disabled selected>Choose a stock...</option>
+                {% for stock in stocks %}
+                    <option value="{{ stock.id }}">{{ stock.ticker }}: {{ stock.company_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-red-sm px-4 py-2">Delete Stock</button>
+
+    </form>
+
+    <!-- Market Hours -->
+    <h4 class="mt-5">Market Hours (MST)</h4>
+    <form action="/admin/update_market" method="POST" class="admin-form">
+
+        <div class="mb-3">
+            <label class="form-label text-white">Open Time</label>
+            <input type="time" class="form-control admin-input" name="open_time"
+                   value="{{ market_config.open_time if market_config else '09:00' }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label text-white">Close Time</label>
+            <input type="time" class="form-control admin-input" name="close_time"
+                   value="{{ market_config.close_time if market_config else '16:00' }}" required>
+        </div>
+
+        <button type="submit" class="btn btn-green-sm px-4 py-2">Update Market Hours</button>
+
+    </form>
+
+    <!-- Holidays -->
+    <h4 class="mt-5">Holidays</h4>
+
+    <!-- Add a holiday -->
+    <form action="/admin/add_holiday" method="POST" class="admin-form">
+
+        <div class="mb-3">
+            <label class="form-label text-white">Date</label>
+            <input type="date" class="form-control admin-input" name="holiday_date" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label text-white">Description</label>
+            <input type="text" class="form-control admin-input" name="description" placeholder="e.g. Christmas Day">
+        </div>
+
+        <button type="submit" class="btn btn-green-sm px-4 py-2">Add Holiday</button>
+
+    </form>
+
+    <!-- List existing holidays with a delete button on each row -->
+    {% if holidays %}
+    <table class="table table-striped table-dark mt-4 admin-form">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for holiday in holidays %}
+            <tr>
+                <td>{{ holiday.holiday_date }}</td>
+                <td>{{ holiday.description or "—" }}</td>
+                <td>
+                    <!-- Each delete is its own small form posting the holiday id -->
+                    <form action="/admin/delete_holiday" method="POST">
+                        <input type="hidden" name="holiday_id" value="{{ holiday.id }}">
+                        <button type="submit" class="btn btn-red-sm btn-sm">Delete</button>
+                    </form>
+                </td>
+            </tr>
             {% endfor %}
-        </select>
-    </div>
+        </tbody>
+    </table>
+    {% else %}
+        <p class="text-muted mt-3">No holidays added yet.</p>
+    {% endif %}
 
-    <button type="submit" class="btn btn-danger">Delete Stock</button>
+</div><!-- /.admin-container -->
 
-</form>
-
-<!-- Market Hours -->
-<h4 class="mt-5">Market Hours (MST)</h4>
-<form action="/admin/update_market" method="POST" style="max-width: 500px;">
-
-    <div class="mb-3">
-        <label class="form-label text-white">Open Time</label>
-        <input type="time" class="form-control" name="open_time"
-               value="{{ market_config.open_time if market_config else '09:00' }}" required>
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label text-white">Close Time</label>
-        <input type="time" class="form-control" name="close_time"
-               value="{{ market_config.close_time if market_config else '16:00' }}" required>
-    </div>
-
-    <button type="submit" class="btn btn-primary">Update Market Hours</button>
-
-</form>
-
-<!--Holidays -->
-<h4 class="mt-5">Holidays</h4>
- 
-<!-- Add a holiday -->
-<form action="/admin/add_holiday" method="POST" style="max-width: 500px;">
- 
-    <div class="mb-3">
-        <label class="form-label text-white">Date</label>
-        <input type="date" class="form-control" name="holiday_date" required>
-    </div>
- 
-    <div class="mb-3">
-        <label class="form-label text-white">Description</label>
-        <input type="text" class="form-control" name="description" placeholder="e.g. Christmas Day">
-    </div>
- 
-    <button type="submit" class="btn btn-success">Add Holiday</button>
- 
-</form>
- 
-<!-- List existing holidays with a delete button on each row -->
-{% if holidays %}
-<table class="table table-striped table-dark mt-4" style="max-width: 500px;">
-    <thead>
-        <tr>
-            <th>Date</th>
-            <th>Description</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for holiday in holidays %}
-        <tr>
-            <td>{{ holiday.holiday_date }}</td>
-            <td>{{ holiday.description or "—" }}</td>
-            <td>
-                <!-- Each delete is its own small form posting the holiday id -->
-                <form action="/admin/delete_holiday" method="POST">
-                    <input type="hidden" name="holiday_id" value="{{ holiday.id }}">
-                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                </form>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% else %}
-    <p class="text-muted mt-3">No holidays added yet.</p>
-{% endif %}
- 
 {% else %}
 <p>You are not logged in or do not have admin access.</p>
 {% endif %}
 {% endblock %}
- 
+
 {% block extra_js %}{% endblock %}
