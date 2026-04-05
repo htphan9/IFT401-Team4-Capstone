@@ -689,7 +689,7 @@ def delete_stock():
 @login_required
 @admin_required
 def add_holiday():
-    holiday_date = request.form.get('holiday_date')  # comes in as a string "YYYY-MM-DD"
+    holiday_date = request.form.get('holiday_date')
     description  = request.form.get('description')
 
     config = MarketConfiguration.query.first()
@@ -697,8 +697,6 @@ def add_holiday():
         flash('Set market hours before adding holidays.', 'danger')
         return redirect(url_for('admin'))
 
-    # Option A — check if this date already exists before inserting
-    from datetime import date
     parsed_date = date.fromisoformat(holiday_date)
     exists = Holiday.query.filter_by(holiday_date=parsed_date).first()
     if exists:
@@ -711,6 +709,14 @@ def add_holiday():
         description=description
     )
     db.session.add(holiday)
+
+    # Log the addition
+    audit = AuditLog(
+        user_id=current_user.id,
+        activity_type='add_holiday',
+        description=f'Added holiday: {description or holiday_date} on {holiday_date}'
+    )
+    db.session.add(audit)
     db.session.commit()
 
     flash(f'Holiday added: {description or holiday_date}.', 'success')
@@ -724,8 +730,21 @@ def delete_holiday():
     holiday_id = request.form.get('holiday_id', type=int)
 
     holiday = Holiday.query.get_or_404(holiday_id)
+
+    # Capture these before deleting so we can reference them in the log
+    label = holiday.description or str(holiday.holiday_date)
+    hdate = str(holiday.holiday_date)
+
     db.session.delete(holiday)
+
+    # Log the removal
+    audit = AuditLog(
+        user_id=current_user.id,
+        activity_type='delete_holiday',
+        description=f'Removed holiday: {label} on {hdate}'
+    )
+    db.session.add(audit)
     db.session.commit()
 
-    flash(f'Holiday removed: {holiday.description or holiday.holiday_date}.', 'success')
+    flash(f'Holiday removed: {label}.', 'success')
     return redirect(url_for('admin'))
