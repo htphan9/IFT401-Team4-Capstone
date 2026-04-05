@@ -715,3 +715,17 @@ def add_holiday():
 
     flash(f'Holiday added: {description or holiday_date}.', 'success')
     return redirect(url_for('admin'))
+
+# Delete a holiday
+@app.route('/admin/delete_holiday', methods=['POST'])
+@login_required
+@admin_required
+def delete_holiday():
+    holiday_id = request.form.get('holiday_id', type=int)
+
+    holiday = Holiday.query.get_or_404(holiday_id)
+    db.session.delete(holiday)
+    db.session.commit()
+
+    flash(f'Holiday removed: {holiday.description or holiday.holiday_date}.', 'success')
+    return redirect(url_for('admin'))
