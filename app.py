@@ -101,6 +101,8 @@ class Holiday(db.Model):
     market_id = db.Column(db.Integer, db.ForeignKey('market_configuration.id'), nullable=False)
     holiday_date = db.Column(db.Date, nullable=False)
     description = db.Column(db.String(255))
+    start_time = db.Column(db.String(5), nullable=True)
+    end_time = db.Column(db.String(5), nullable=True)
 
 # Portfolio model
 class Portfolio(db.Model):
@@ -125,7 +127,17 @@ def is_market_open():
     today = now.date()
     holiday = Holiday.query.filter_by(holiday_date=today).first()
     if holiday:
-        return False
+        # If the holiday has specific hours, only close during that window
+        if holiday.start_time and holiday.end_time:
+            h_start = holiday.start_time.split(':')
+            h_end = holiday.end_time.split(':')
+            hol_start = now.replace(hour=int(h_start[0]), minute=int(h_start[1]), second=0)
+            hol_end = now.replace(hour=int(h_end[0]), minute=int(h_end[1]), second=0)
+            if hol_start <= now <= hol_end:
+                return False
+        else:
+            return False # All-day holiday
+
 
     # Check market hours from the database
     config = MarketConfiguration.query.first()
@@ -223,6 +235,7 @@ with app.app_context():
                 (date(2026, 2, 16),  "Presidents' Day"),
                 (date(2026, 4, 18),  "Good Friday"),
                 (date(2026, 5, 25),  "Memorial Day"),
+                (date(2026, 6,  19), "Juneteenth"),
                 (date(2026, 7,  3),  "Independence Day (observed)"),
                 (date(2026, 9,  7),  "Labor Day"),
                 (date(2026, 11, 26), "Thanksgiving Day"),
@@ -698,6 +711,13 @@ def delete_stock():
 def add_holiday():
     holiday_date = request.form.get('holiday_date')
     description  = request.form.get('description')
+    start_time   = request.form.get('start_time') or None
+    end_time     = request.form.get('end_time') or None
+
+    # Both times must be filled out, or both left empty
+    if (start_time and not end_time) or (end_time and not start_time):
+        flash('Please provide both a start and end time, or leave both empty.', 'danger')
+        return redirect(url_for('admin'))
 
     config = MarketConfiguration.query.first()
     if not config:
@@ -713,7 +733,9 @@ def add_holiday():
     holiday = Holiday(
         market_id=config.id,
         holiday_date=parsed_date,
-        description=description
+        description=description,
+        start_time=start_time,
+        end_time=end_time
     )
     db.session.add(holiday)
 
