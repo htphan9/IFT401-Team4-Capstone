@@ -600,7 +600,14 @@ def update_market():
     else:
         config.open_time = open_time
         config.close_time = close_time
-
+    
+    # Log the change
+    audit = AuditLog(
+        user_id=current_user.id,
+        activity_type='update_market_hours',
+        description=f'Market hours updated to {open_time} — {close_time} MST'
+    )
+    db.session.add(audit)
     db.session.commit()
     flash('Market hours updated.', 'success')
     return redirect(url_for('admin'))
