@@ -634,8 +634,7 @@ def delete_stock():
         flash(f'Cannot delete {stock.ticker} — it has existing transactions.', 'danger')
         return redirect(url_for('admin'))
 
-    # Safe to delete — clean up any lingering portfolio rows first
-    # (e.g. a user bought then sold back to 0 shares)
+    # Safe to delete/clean up any lingering portfolio rows first
     Portfolio.query.filter_by(stock_id=stock_id).delete()
 
     # Delete the stock itself
