@@ -683,3 +683,35 @@ def delete_stock():
 
     flash(f'{stock.ticker} deleted successfully.', 'success')
     return redirect(url_for('admin'))
+
+# Add a holiday
+@app.route('/admin/add_holiday', methods=['POST'])
+@login_required
+@admin_required
+def add_holiday():
+    holiday_date = request.form.get('holiday_date')  # comes in as a string "YYYY-MM-DD"
+    description  = request.form.get('description')
+
+    config = MarketConfiguration.query.first()
+    if not config:
+        flash('Set market hours before adding holidays.', 'danger')
+        return redirect(url_for('admin'))
+
+    # Option A — check if this date already exists before inserting
+    from datetime import date
+    parsed_date = date.fromisoformat(holiday_date)
+    exists = Holiday.query.filter_by(holiday_date=parsed_date).first()
+    if exists:
+        flash(f'{holiday_date} is already a holiday.', 'danger')
+        return redirect(url_for('admin'))
+
+    holiday = Holiday(
+        market_id=config.id,
+        holiday_date=parsed_date,
+        description=description
+    )
+    db.session.add(holiday)
+    db.session.commit()
+
+    flash(f'Holiday added: {description or holiday_date}.', 'success')
+    return redirect(url_for('admin'))
