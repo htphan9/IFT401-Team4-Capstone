@@ -574,3 +574,46 @@ def update_market():
     db.session.commit()
     flash('Market hours updated.', 'success')
     return redirect(url_for('admin'))
+
+# Add a new stock
+@app.route('/admin/add_stock', methods=['POST'])
+@login_required
+@admin_required
+def add_stock():
+    # Pull values from the admin form
+    ticker       = request.form.get('ticker').strip().upper()
+    company_name = request.form.get('company_name').strip()
+    initial_price  = Decimal(request.form.get('initial_price'))
+    initial_volume = int(request.form.get('initial_volume_issued'))
+
+    # Check if a stock with this ticker already exists
+    existing = Stock.query.filter_by(ticker=ticker).first()
+    if existing:
+        flash(f'A stock with ticker {ticker} already exists.', 'danger')
+        return redirect(url_for('admin'))
+
+    # Create the new stock row
+    stock = Stock(
+        ticker=ticker,
+        company_name=company_name,
+        initial_price=initial_price,
+        current_price=initial_price,
+        opening_price=initial_price,
+        total_shares_issued=initial_volume,
+        available_inventory=initial_volume,
+        daily_high=None,
+        daily_low=None
+    )
+    db.session.add(stock)
+
+    # Log the action to the audit log
+    audit = AuditLog(
+        user_id=current_user.id,
+        activity_type='add_stock',
+        description=f'Added stock {ticker} ({company_name}) at ${initial_price}'
+    )
+    db.session.add(audit)
+    db.session.commit()
+
+    flash(f'{ticker} added successfully.', 'success')
+    return redirect(url_for('admin'))
