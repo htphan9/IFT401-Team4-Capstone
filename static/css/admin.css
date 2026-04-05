@@ -1,15 +1,17 @@
-/* Fixed card width — same approach as cash.html's inline style="width: 15vw" */
+/* admin.css — single column card layout */
+
+/* Fixed card width — matches the cash page feel */
 .admin-card {
-    width: 22vw;
-    min-width: 280px;
+    width: 31.3vw;
+    min-width: 320px;
 }
 
-/* Dark form controls — copied directly from cash.css */
+/* Dark form controls — copied from cash.css */
 .form-control {
     background-color: #1f1f1f;
     border-color: var(--border-color);
     color: var(--text-primary);
-    color-scheme: dark; /* fixes browser chrome on date/time inputs */
+    color-scheme: dark;
 }
 
 .form-control:focus {
