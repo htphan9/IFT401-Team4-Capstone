@@ -8,92 +8,85 @@ document.addEventListener('DOMContentLoaded', function () {
         price: 0,
         owned: 0,
         avgCost: 0,
-        balance: 0
+        balance: 0,
+        ticker: '' // added for order summary -Donavan
     };
 
     // Grab references to modal elements
     var quantityInput = document.getElementById('modal-quantity');
-    var confirmInput = document.getElementById('modal-confirm');
     var submitBtn = document.getElementById('modal-submit-btn');
     var warningEl = document.getElementById('modal-warning');
-    var totalCostEl = document.getElementById('modal-total-cost');
-    var remainingEl = document.getElementById('modal-remaining');
     var ownedEl = document.getElementById('modal-owned');
-    var pnlEl = document.getElementById('modal-pnl');
-    var pnlRow = document.getElementById('modal-pnl-row');
-    var confirmWord = document.getElementById('modal-confirm-word');
     var maxBtn = document.getElementById('modal-max-btn');
 
-    // Recalculate the trade summary every time quantity changes
-    function updateModalStats() {
-        var quantity = parseInt(quantityInput.value) || 0;
-        var price = modalState.price;
-        var totalCost = quantity * price;
-        var hasWarning = false;
+    // Two-step confirm/cancel references -Donavan
+    var step1 = document.getElementById('modal-step-1');
+    var step2 = document.getElementById('modal-step-2');
+    var reviewBtn = document.getElementById('modal-review-btn');
+    var backBtn = document.getElementById('modal-back-btn');
 
-        // Update total cost display
-        totalCostEl.textContent = '$' + totalCost.toFixed(2);
+    // Show step 1 (quantity entry), hide step 2 -Donavan
+    function showStep1() {
+        step1.classList.remove('d-none');
+        step2.classList.add('d-none');
+    }
 
-        // Calculate estimated remaining balance
-        var remaining = 0;
-        if (modalState.action === 'buy') {
-            remaining = modalState.balance - totalCost;
-        } else {
-            remaining = modalState.balance + totalCost;
-        }
+    // Show step 2 (order summary), hide step 1 -Donavan
+    function showStep2() {
+        var quantity  = parseInt(quantityInput.value) || 0;
+        var totalCost = quantity * modalState.price;
+        var remaining = modalState.action === 'buy'
+            ? modalState.balance - totalCost
+            : modalState.balance + totalCost;
+
+        document.getElementById('summary-action').textContent = modalState.action === 'buy' ? 'Buy' : 'Sell';
+        document.getElementById('summary-ticker').textContent = modalState.ticker;
+        document.getElementById('summary-shares').textContent = quantity.toLocaleString();
+        document.getElementById('summary-price').textContent  = '$' + modalState.price.toFixed(2);
+        document.getElementById('summary-total').textContent  = '$' + totalCost.toFixed(2);
+
+        var remainingEl = document.getElementById('summary-remaining');
         remainingEl.textContent = '$' + remaining.toFixed(2);
-
-        // Color the remaining balance red if it goes negative
-        if (remaining < 0) {
-            remainingEl.className = 'text-danger';
-        } else {
-            remainingEl.className = '';
-        }
+        remainingEl.className   = remaining < 0 ? 'text-danger' : '';
 
         // Show P&L only when selling
+        var pnlRow = document.getElementById('summary-pnl-row');
         if (modalState.action === 'sell') {
             pnlRow.classList.remove('d-none');
-            var pnlValue = (price - modalState.avgCost) * quantity;
-            if (pnlValue >= 0) {
-                pnlEl.textContent = '+$' + pnlValue.toFixed(2);
-                pnlEl.className = 'text-success';
-            } else {
-                pnlEl.textContent = '-$' + Math.abs(pnlValue).toFixed(2);
-                pnlEl.className = 'text-danger';
-            }
+            var pnl   = (modalState.price - modalState.avgCost) * quantity;
+            var pnlEl = document.getElementById('summary-pnl');
+            pnlEl.textContent = (pnl >= 0 ? '+$' : '-$') + Math.abs(pnl).toFixed(2);
+            pnlEl.className   = pnl >= 0 ? 'text-success' : 'text-danger';
         } else {
             pnlRow.classList.add('d-none');
         }
 
-        // Warning checks
+        step1.classList.add('d-none');
+        step2.classList.remove('d-none');
+    }
+
+    // Validate quantity and show warnings -Donavan
+    function validate() {
+        var quantity  = parseInt(quantityInput.value) || 0;
+        var totalCost = quantity * modalState.price;
+        var hasError  = false;
+
         warningEl.classList.add('d-none');
         warningEl.textContent = '';
 
         if (modalState.action === 'buy' && totalCost > modalState.balance) {
             warningEl.textContent = 'Insufficient Funds';
             warningEl.classList.remove('d-none');
-            hasWarning = true;
+            hasError = true;
         }
         if (modalState.action === 'sell' && quantity > modalState.owned) {
             warningEl.textContent = 'Insufficient Shares Owned';
             warningEl.classList.remove('d-none');
-            hasWarning = true;
+            hasError = true;
         }
 
-        // Check confirmation input and warnings to decide if submit is allowed
-        checkSubmitState(hasWarning);
+        reviewBtn.disabled = hasError || quantity < 1;
     }
-
-    // Enable or disable the submit button based on warnings and confirmation text
-    function checkSubmitState(hasWarning) {
-        var typed = confirmInput.value.trim().toLowerCase();
-        if (!hasWarning && typed === modalState.action) {
-            submitBtn.disabled = false;
-        } else {
-            submitBtn.disabled = true;
-        }
-    }
-
 
     // Attach a click listener to every Buy and Sell button
     document.querySelectorAll('.trade-btn').forEach(function (button) {
@@ -112,11 +105,12 @@ document.addEventListener('DOMContentLoaded', function () {
             var balance = parseFloat(balanceEl.dataset.balance) || 0;
 
             // Save state
-            modalState.action = action;
-            modalState.price = price;
-            modalState.owned = owned;
+            modalState.action  = action;
+            modalState.price   = price;
+            modalState.owned   = owned;
             modalState.avgCost = avgCost;
             modalState.balance = balance;
+            modalState.ticker  = ticker; // -Donavan
 
             // Update the modal title to "Buy AAPL" or "Sell AAPL"
             document.getElementById('tradeModalLabel').textContent =
@@ -133,33 +127,39 @@ document.addEventListener('DOMContentLoaded', function () {
             // Show shares owned
             ownedEl.textContent = owned.toLocaleString();
 
-            // Update the confirmation word label
-            confirmWord.textContent = action;
-
             // Style the submit button
             submitBtn.textContent = action === 'buy' ? 'Confirm Buy' : 'Confirm Sell';
             submitBtn.className   = action === 'buy'
-                ? 'btn btn-green-sm w-100'
-                : 'btn btn-red-sm w-100';
+                ? 'btn btn-green-sm w-50'
+                : 'btn btn-red-sm w-50';
 
-            // Reset the form fields
+            // Reset and show step 1 -Donavan
             quantityInput.value = 1;
-            confirmInput.value = '';
-            submitBtn.disabled = true;
-
-            // Calculate initial stats
-            updateModalStats();
+            showStep1();
+            validate();
         });
     });
 
     // Recalculate when user changes the quantity
     quantityInput.addEventListener('input', function () {
-        updateModalStats();
+        validate();
     });
 
-    // Check the confirmation text as user types
-    confirmInput.addEventListener('input', function () {
-        updateModalStats();
+    // Review button → advance to order summary -Donavan
+    reviewBtn.addEventListener('click', function () {
+        showStep2();
+    });
+
+    // Cancel button → back to quantity entry -Donavan
+    backBtn.addEventListener('click', function () {
+        showStep1();
+    });
+
+    // Reset modal to step 1 when closed -Donavan
+    document.getElementById('tradeModal').addEventListener('hidden.bs.modal', function () {
+        showStep1();
+        quantityInput.value = 1;
+        warningEl.classList.add('d-none');
     });
 
     // Max button — fill in the max quantity the user can buy or sell
@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             quantityInput.value = modalState.owned > 0 ? modalState.owned : 1;
         }
-        updateModalStats();
+        validate();
     });
 
     // Poll the server for updated stock prices every 1 minute
