@@ -103,37 +103,52 @@
                         <input type="hidden" name="stock_id" id="modal-stock-id">
                         <input type="hidden" name="action"   id="modal-action">
 
-                        <p id="modal-price-display" class="mb-3"></p>
+                        <!-- Step 1: quantity entry -Donavan -->
+                        <div id="modal-step-1">
+                            <p id="modal-price-display" class="mb-3"></p>
 
-                        <!-- Trade summary info -->
-                        <div class="mb-3">
-                            <p class="mb-1">Shares You Own: <strong id="modal-owned">0</strong></p>
-                            <p class="mb-1">Total Cost: <strong id="modal-total-cost">$0.00</strong></p>
-                            <p class="mb-1">Estimated Balance After Trade: <strong id="modal-remaining">$0.00</strong></p>
-                            <p class="mb-1 d-none" id="modal-pnl-row">Estimated P&L: <strong id="modal-pnl">$0.00</strong></p>
-                        </div>
-
-                        <!-- Warning message -->
-                        <p id="modal-warning" class="text-danger d-none"></p>
-
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <label for="modal-quantity" class="form-label mb-0">Number of Shares</label>
-                                <button type="button" class="btn btn-outline-light btn-sm" id="modal-max-btn">Max</button>
+                            <div class="mb-3">
+                                <p class="mb-1">Shares You Own: <strong id="modal-owned">0</strong></p>
                             </div>
-                            <input type="number" class="form-control mt-1" id="modal-quantity"
-                                   name="quantity" min="1" value="1" required>
+
+                            <!-- Warning message -->
+                            <p id="modal-warning" class="text-danger d-none"></p>
+
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <label for="modal-quantity" class="form-label mb-0">Number of Shares</label>
+                                    <button type="button" class="btn btn-outline-light btn-sm" id="modal-max-btn">Max</button>
+                                </div>
+                                <input type="number" class="form-control mt-1" id="modal-quantity"
+                                       name="quantity" min="1" value="1" required>
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="button" class="btn btn-outline-light" id="modal-review-btn">Review Order</button>
+                            </div>
                         </div>
 
-                        <!-- Typed confirmation -->
-                        <div class="mb-3">
-                            <label for="modal-confirm" class="form-label">Type "<span id="modal-confirm-word">buy</span>" to confirm</label>
-                            <input type="text" class="form-control" id="modal-confirm" autocomplete="off">
+                        <!-- Step 2: order summary confirm/cancel -Donavan -->
+                        <div id="modal-step-2" class="d-none">
+                            <h6 class="mb-3 text-center">Order Summary</h6>
+
+                            <div class="card bg-secondary bg-opacity-25 border-secondary p-3 mb-3">
+                                <p class="mb-1">Action: <strong id="summary-action"></strong></p>
+                                <p class="mb-1">Ticker: <strong id="summary-ticker"></strong></p>
+                                <p class="mb-1">Shares: <strong id="summary-shares"></strong></p>
+                                <p class="mb-1">Price per Share: <strong id="summary-price"></strong></p>
+                                <hr class="border-secondary">
+                                <p class="mb-1">Total Cost: <strong id="summary-total"></strong></p>
+                                <p class="mb-1">Balance After Trade: <strong id="summary-remaining"></strong></p>
+                                <p class="mb-1 d-none" id="summary-pnl-row">Estimated P&L: <strong id="summary-pnl"></strong></p>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-light w-50" id="modal-back-btn">Cancel</button>
+                                <button type="submit" class="btn w-50" id="modal-submit-btn">Confirm</button>
+                            </div>
                         </div>
 
-                        <div class="d-grid">
-                            <!-- Button starts disabled until confirmation word matches -->
-                            <button type="submit" class="btn" id="modal-submit-btn" disabled>Confirm</button>                        </div>
                     </form>
                 </div>
 
