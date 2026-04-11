@@ -78,7 +78,14 @@ class MarketConfiguration(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     open_time = db.Column(db.String(5), nullable=False, default='09:30')
     close_time = db.Column(db.String(5), nullable=False, default='16:00')
-
+    closed_monday    = db.Column(db.Boolean, nullable=False, default=False)          
+    closed_tuesday   = db.Column(db.Boolean, nullable=False, default=False)                                                                                                                                   
+    closed_wednesday = db.Column(db.Boolean, nullable=False, default=False)                                                                                                                                   
+    closed_thursday  = db.Column(db.Boolean, nullable=False, default=False)                                                                                                                                   
+    closed_friday    = db.Column(db.Boolean, nullable=False, default=False)                                                                                                                                   
+    closed_saturday  = db.Column(db.Boolean, nullable=False, default=True)
+    closed_sunday    = db.Column(db.Boolean, nullable=False, default=True)
+ 
 # Transactions model
 class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -119,9 +126,18 @@ class Portfolio(db.Model):
 def is_market_open():
     now = az_time()
 
-    # Market is closed on weekends (Saturday=5, Sunday=6)
-    if now.weekday() >= 5:
+    config = MarketConfiguration.query.first()
+    if not config:
         return False
+
+    weekday = now.weekday() # 0 = Monday, 6 = Sunday
+    if weekday == 0 and config.closed_monday: return False
+    if weekday == 1 and config.closed_tuesday: return False
+    if weekday == 2 and config.closed_wednesday: return False
+    if weekday == 3 and config.closed_thursday: return False
+    if weekday == 4 and config.closed_friday: return False
+    if weekday == 5 and config.closed_saturday: return False
+    if weekday == 6 and config.closed_sunday: return False
 
     # Check if today is a holiday
     today = now.date()
@@ -137,12 +153,6 @@ def is_market_open():
                 return False
         else:
             return False # All-day holiday
-
-
-    # Check market hours from the database
-    config = MarketConfiguration.query.first()
-    if not config:
-        return False
 
     open_parts = config.open_time.split(':')
     close_parts = config.close_time.split(':')
@@ -606,13 +616,34 @@ def update_market():
     open_time = request.form.get('open_time')
     close_time = request.form.get('close_time')
 
+    closed_monday = 'closed_monday' in request.form
+    closed_tuesday = 'closed_tuesday' in request.form
+    closed_wednesday = 'closed_wednesday' in request.form
+    closed_thursday = 'closed_thursday' in request.form
+    closed_friday = 'closed_friday' in request.form
+    closed_saturday = 'closed_saturday' in request.form
+    closed_sunday = 'closed_sunday' in request.form
+
     config = MarketConfiguration.query.first()
     if not config:
-        config = MarketConfiguration(open_time=open_time, close_time=close_time)
+        config = MarketConfiguration(
+            open_time=open_time, close_time=close_time,
+            closed_monday=closed_monday, closed_tuesday=closed_tuesday,
+            closed_wednesday=closed_wednesday, closed_thursday=closed_thursday,
+            closed_friday=closed_friday, closed_saturday=closed_saturday,
+            closed_sunday=closed_sunday
+        )
         db.session.add(config)
     else:
         config.open_time = open_time
         config.close_time = close_time
+        config.closed_monday = closed_monday
+        config.closed_tuesday = closed_tuesday
+        config.closed_wednesday = closed_wednesday
+        config.closed_thursday = closed_thursday
+        config.closed_friday = closed_friday
+        config.closed_saturday = closed_saturday
+        config.closed_sunday = closed_sunday
     
     # Log the change
     audit = AuditLog(
