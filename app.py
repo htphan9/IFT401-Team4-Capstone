@@ -161,6 +161,71 @@ def is_market_open():
 
     return open_time <= now <= close_time
 
+# Execute all pending orders when the market is open -Donavan
+def execute_pending_orders():
+    pending = Transaction.query.filter_by(status='pending').all()
+    if not pending:
+        return
+
+    for txn in pending:
+        stock = Stock.query.get(txn.stock_id)
+        cash_account = CashAccount.query.filter_by(user_id=txn.user_id).first()
+        portfolio = Portfolio.query.filter_by(
+            user_id=txn.user_id, stock_id=txn.stock_id
+        ).first()
+
+        price = stock.current_price
+        total_cost = Decimal(txn.amount) * price
+
+        if txn.type == 'buy':
+            # Revalidate funds and inventory before executing
+            if cash_account.balance < total_cost or stock.available_inventory < txn.amount:
+                txn.status = 'cancelled'
+                continue
+
+            cash_account.balance -= total_cost
+            stock.available_inventory -= txn.amount
+
+            if stock.daily_high is None or price > stock.daily_high:
+                stock.daily_high = price
+
+            if portfolio is None:
+                portfolio = Portfolio(
+                    user_id=txn.user_id,
+                    stock_id=txn.stock_id,
+                    cash_account_id=cash_account.id,
+                    shares_owned=txn.amount
+                )
+                db.session.add(portfolio)
+            else:
+                portfolio.shares_owned += txn.amount
+
+        elif txn.type == 'sell':
+            # Revalidate shares before executing
+            if portfolio is None or portfolio.shares_owned < txn.amount:
+                txn.status = 'cancelled'
+                continue
+
+            cash_account.balance += total_cost
+            stock.available_inventory += txn.amount
+
+            if stock.daily_low is None or price < stock.daily_low:
+                stock.daily_low = price
+
+            portfolio.shares_owned -= txn.amount
+
+        # Mark completed at current market price -Donavan
+        txn.status = 'completed'
+        txn.price_at_execution = price
+
+    db.session.commit()
+
+# Runs before every request- fires pending orders if market is open -Donavan
+@app.before_request
+def check_pending_orders():
+    if is_market_open():
+        execute_pending_orders()
+
 # Get a user's portfolio holdings with average cost per stock
 def get_user_holdings(user_id):
     positions = Portfolio.query.filter(
@@ -398,6 +463,7 @@ def market():
         }
 
     return render_template("market.html", stocks=stocks, is_open=is_market_open(), account=account, user_holdings=user_holdings)    
+
 # Cash
 @app.route('/cash')
 @login_required # Only logged-in users can access
@@ -486,11 +552,6 @@ def history():
 @app.route('/trade', methods=['POST'])
 @login_required
 def trade():
-    # Block trades when the market is closed
-    if not is_market_open():
-        flash('The market is currently closed. Trades cannot be executed.', 'danger')
-        return redirect(url_for('market'))
-
     # Pull form data
     stock_id = request.form.get('stock_id', type=int)
     action = request.form.get('action')        # "buy" or "sell"
@@ -511,6 +572,33 @@ def trade():
 
     price = stock.current_price
     total_cost = Decimal(quantity) * price
+
+    # Market is closed- save as pending instead of executing -Donavan
+    if not is_market_open():
+        audit = AuditLog(
+            user_id=current_user.id,
+            activity_type=action,
+            description=f'Pending: {action.capitalize()} {quantity} share(s) of {stock.ticker} at ${price}'
+        )
+        db.session.add(audit)
+        db.session.flush()
+
+        transaction = Transaction(
+            user_id=current_user.id,
+            stock_id=stock_id,
+            type=action,
+            amount=quantity,
+            price_at_execution=price,
+            status='pending',
+            log_id=audit.id
+        )
+        db.session.add(transaction)
+        db.session.commit()
+
+        flash(f'Market is closed. Your {action} order for {quantity} share(s) of {stock.ticker} is pending and will execute when the market opens.', 'warning')
+        if action == 'sell':
+            return redirect(url_for('home'))
+        return redirect(url_for('market'))
 
     # Buy
     if action == 'buy':
@@ -598,6 +686,7 @@ def trade():
     if action == 'sell':
         return redirect(url_for('home'))
     return redirect(url_for('market'))
+
 # Admin
 @app.route('/admin')
 @login_required # Only logged-in users can access
