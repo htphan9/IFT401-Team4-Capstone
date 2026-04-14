@@ -20,6 +20,12 @@ load_dotenv()
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
+# Configuration for AWS
+#app.config['SQLALCHEMY_DATABASE_URI'] = \
+#    'mysql+pymysql://admin:password133767@team-4-rds-instance.cheqy8o4gjlp.us-east-2.rds.amazonaws.com/capstone_db'
+#app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+#app.config['SECRET_KEY'] = 'your-secret-key'
+
 # # Configuration for Demo Only
 # app.config['SQLALCHEMY_DATABASE_URI'] = \
 #     'mysql+pymysql://root:password@localhost/capstone_db'
