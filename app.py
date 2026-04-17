@@ -431,6 +431,7 @@ def api_prices():
 def home():
     account = CashAccount.query.filter_by(user_id=current_user.id).first()
     transactions = Transaction.query.filter_by(user_id=current_user.id).order_by(Transaction.id.desc()).all()
+    pending_orders = Transaction.query.filter_by(user_id=current_user.id, status='pending').order_by(Transaction.id.desc()).all()
     stocks = Stock.query.all()
     holdings = get_user_holdings(current_user.id)
 
@@ -450,7 +451,7 @@ def home():
         pos.unrealized_pnl = market_value - total_cost
         portfolio.append(pos)
 
-    return render_template("home.html", account=account, transactions=transactions, stocks=stocks, portfolio=portfolio, is_open=is_market_open())
+    return render_template("home.html", account=account, transactions=transactions, pending_orders=pending_orders, stocks=stocks, portfolio=portfolio, is_open=is_market_open())
 
 # Market
 @app.route('/market')
@@ -692,6 +693,30 @@ def trade():
     if action == 'sell':
         return redirect(url_for('home'))
     return redirect(url_for('market'))
+
+# Trade Cancel
+@app.route('/trade/cancel/<int:transaction_id>', methods=['POST'])
+@login_required
+def cancel_trade(transaction_id):
+    transaction = Transaction.query.get_or_404(transaction_id)
+    
+    # Simple validation against user manipulation
+    if transaction.user_id != current_user.id or transaction.status != 'pending':
+        flash('Cannot cancel this order.', 'danger')
+        return redirect(url_for('home'))
+        
+    transaction.status = 'cancelled'
+    
+    audit = AuditLog(
+        user_id=current_user.id,
+        activity_type='cancel',
+        description=f'Cancelled pending {transaction.type} order for {transaction.amount} share(s) of {transaction.stock.ticker}'
+    )
+    db.session.add(audit)
+    db.session.commit()
+    
+    flash('Pending order cancelled successfully.', 'success')
+    return redirect(url_for('home'))
 
 # Admin
 @app.route('/admin')
