@@ -20,12 +20,6 @@ load_dotenv()
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
-# Configuration for AWS
-#app.config['SQLALCHEMY_DATABASE_URI'] = \
-#    'mysql+pymysql://admin:password133767@team-4-rds-instance.cheqy8o4gjlp.us-east-2.rds.amazonaws.com/capstone_db'
-#app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-#app.config['SECRET_KEY'] = 'your-secret-key'
-
 # # Configuration for Demo Only
 # app.config['SQLALCHEMY_DATABASE_URI'] = \
 #     'mysql+pymysql://root:password@localhost/capstone_db'
@@ -55,7 +49,7 @@ class Users(UserMixin, db.Model):
 # Cash model
 class CashAccount(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     balance = db.Column(db.Numeric(12, 2), nullable=False, default=0.00)
 
 class Stock(db.Model):
@@ -73,7 +67,7 @@ class Stock(db.Model):
 # Audit model
 class AuditLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     user = db.relationship('Users', backref='audit_logs')
     activity_type = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(255))
@@ -95,14 +89,14 @@ class MarketConfiguration(db.Model):
 # Transactions model
 class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     user = db.relationship('Users', backref='transactions')
-    stock_id = db.Column(db.Integer, db.ForeignKey('stock.id'), nullable=False)
+    stock_id = db.Column(db.Integer, db.ForeignKey('stock.id'), nullable=False, index=True)
     stock = db.relationship('Stock', backref='transactions')
     type = db.Column(db.String(20), nullable=False) # buy/sell
     amount = db.Column(db.Integer, nullable=False)
     price_at_execution = db.Column(db.Numeric(10, 2))
-    status = db.Column(db.String(50), nullable=False)
+    status = db.Column(db.String(50), nullable=False, index=True)
     log_id = db.Column(db.Integer, db.ForeignKey('audit_log.id'))
     log = db.relationship('AuditLog', backref='transactions')
     market_id = db.Column(db.Integer, db.ForeignKey('market_configuration.id'))
@@ -120,9 +114,9 @@ class Holiday(db.Model):
 # Portfolio model
 class Portfolio(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     user = db.relationship('Users', backref='portfolios')
-    stock_id = db.Column(db.Integer, db.ForeignKey('stock.id'), nullable=False)
+    stock_id = db.Column(db.Integer, db.ForeignKey('stock.id'), nullable=False, index=True)
     stock = db.relationship('Stock', backref='portfolios')
     cash_account_id = db.Column(db.Integer, db.ForeignKey('cash_account.id'), nullable=False)
     cash_account = db.relationship('CashAccount', backref='portfolios')
@@ -239,15 +233,32 @@ def get_user_holdings(user_id):
         Portfolio.shares_owned > 0
     ).all()
 
+    if not positions:
+        return {}
+
+    # Collect all stock IDs the user holds
+    stock_ids = [pos.stock_id for pos in positions]
+
+    # Fetch ALL buy transactions for these stocks in ONE query (instead of N)
+    buy_txns = Transaction.query.filter(
+        Transaction.user_id == user_id,
+        Transaction.stock_id.in_(stock_ids),
+        Transaction.type == 'buy'
+    ).order_by(Transaction.id.desc()).all()
+
+    # Group transactions by stock_id in Python
+    txns_by_stock = {}
+    for txn in buy_txns:
+        txns_by_stock.setdefault(txn.stock_id, []).append(txn)
+
+
     holdings = {}
     for pos in positions:
-        buy_txns = Transaction.query.filter_by(
-            user_id=user_id, stock_id=pos.stock_id, type='buy'
-        ).order_by(Transaction.id.desc()).all()
+        stock_txns = txns_by_stock.get(pos.stock_id, [])
 
         shares_to_account = pos.shares_owned
         total_cost = Decimal('0')
-        for txn in buy_txns:
+        for txn in stock_txns:
             if shares_to_account <= 0:
                 break
             applicable = min(txn.amount, shares_to_account)
@@ -259,11 +270,14 @@ def get_user_holdings(user_id):
         else:
             avg_cost = Decimal('0')
 
+        last_buy_price = Decimal(str(stock_txns[0].price_at_execution)) if stock_txns else Decimal('0')
+
         holdings[pos.stock_id] = {
             'position': pos,
             'shares_owned': pos.shares_owned,
             'avg_cost': avg_cost,
-            'total_cost': total_cost
+            'total_cost': total_cost,
+            'last_buy_price': last_buy_price
         }
 
     return holdings
@@ -441,13 +455,9 @@ def home():
         avg_cost = data['avg_cost']
         total_cost = data['total_cost']
 
-        buy_txns = Transaction.query.filter_by(
-            user_id=current_user.id, stock_id=stock_id, type='buy'
-        ).order_by(Transaction.id.desc()).all()
-
         market_value = Decimal(str(pos.stock.current_price)) * pos.shares_owned
         pos.avg_cost = avg_cost
-        pos.price_at_execution = Decimal(str(buy_txns[0].price_at_execution)) if buy_txns else Decimal('0')
+        pos.price_at_execution = data['last_buy_price']
         pos.unrealized_pnl = market_value - total_cost
         portfolio.append(pos)
 
