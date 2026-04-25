@@ -77,6 +77,42 @@
             </div>
         </div>
 
+        <!-- Update Role -->
+        <div class="card bg-dark border-secondary mb-4">
+            <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                <h5 class="card-title mb-3 w-100">Update Role</h5>
+                <form action="/admin/update_role" method="POST" class="w-100">
+
+                    <div class="mb-3">
+                        <label class="form-label">Select User</label>
+                        <select class="form-control" name="user_id" required>
+                            <option value="" disabled selected>Choose a user...</option>
+                            {% for user in users %}
+                                <option value="{{ user.id }}">{{ user.username }} ({{ user.role }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">New Role</label>
+                        <select class="form-control" name="new_role" required>
+                            <option value="" disabled selected>Choose a role...</option>
+                            <option value="user">user</option>
+                            <option value="admin">admin</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-green-sm w-100 py-2">Update Role</button>
+
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+        <!-- Right Column: Market Hours + Holidays -->
+        <div class="col-12 col-lg-6">
+
         <!-- Market Hours -->
         <div class="card bg-dark border-secondary mb-4">
             <div class="card-body">
@@ -88,8 +124,7 @@
                             <label class="form-label">Open Time</label>
                             <input type="time" class="form-control" name="open_time"
                                 value="{{ market_config.open_time if market_config else '09:00' }}" required>
-                         </div>
-                     
+                         </div>   
                          <div class="col-12 col-sm-6 mb-3">
                              <label class="form-label">Close Time</label>
                              <input type="time" class="form-control" name="close_time"
@@ -135,11 +170,6 @@
                 </form>
             </div>
         </div>
-
-    </div>
-
-        <!-- Right Column: Holidays -->
-        <div class="col-12 col-lg-6">
 
             <div class="card bg-dark border-secondary mb-4">
                 <div class="card-body">

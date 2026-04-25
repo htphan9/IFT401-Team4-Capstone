@@ -736,7 +736,8 @@ def admin():
     stocks = Stock.query.all()
     market_config = MarketConfiguration.query.first()
     holidays = Holiday.query.order_by(Holiday.holiday_date).all()
-    return render_template("admin.html", stocks=stocks, market_config=market_config, holidays=holidays, is_open=is_market_open())
+    users = Users.query.order_by(Users.username).all()
+    return render_template("admin.html", stocks=stocks, market_config=market_config, holidays=holidays, users=users, is_open=is_market_open())
 
 # Update market hours
 @app.route('/admin/update_market', methods=['POST'])
@@ -937,4 +938,36 @@ def delete_holiday():
     db.session.commit()
 
     flash(f'Holiday removed: {label}.', 'success')
+    return redirect(url_for('admin'))
+
+# Update a user's role
+@app.route('/admin/update_role', methods=['POST'])
+@login_required
+@admin_required
+def update_role():
+    user_id = request.form.get('user_id', type=int)
+    new_role = request.form.get('new_role')
+
+    if new_role not in ('user', 'admin'):
+        flash('Invalid role selected.', 'danger')
+        return redirect(url_for('admin'))
+
+    user = Users.query.get_or_404(user_id)
+
+    # Prevent the current admin from demoting themselves
+    if user.id == current_user.id and new_role != 'admin':
+        flash('You cannot remove your own admin role.', 'danger')
+        return redirect(url_for('admin'))
+
+    user.role = new_role
+
+    audit = AuditLog(
+        user_id=current_user.id,
+        activity_type='update_role',
+        description=f'Changed role of {user.username} to {new_role}'
+    )
+    db.session.add(audit)
+    db.session.commit()
+
+    flash(f'{user.username}\'s role updated to {new_role}.', 'success')
     return redirect(url_for('admin'))
